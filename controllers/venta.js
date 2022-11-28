@@ -4,9 +4,8 @@ const con = require('../src/dbuser')
 
 var controller = {
     save: async (req, res) => {
-        const bd = req.params.bd
-        const params = req.body
-        const conn = con(bd)
+        const {user, data} = req.body
+        const conn = con(user)
 
         const Ingreso = conn.model('Ingreso')
         const Venta = conn.model('Venta')
@@ -20,21 +19,21 @@ var controller = {
 
         ingreso.concepto = "VENTA"
         ingreso.venta = venta._id
-        ingreso.ubicacion = params.ubicacion
-        ingreso.fecha = params.fecha
-        ingreso.tipoPago = params.tipoPago
-        if(params.tipoPago === "CRÉDITO"){
-                venta.acuenta = params.acuenta
-                ingreso.cliente = params.cliente
-            if(params.acuenta>0){
-                ingreso.descripcion = "PAGO A CUENTA DE " + params.cliente.nombre
-                ingreso.importe = params.acuenta
-                ingreso.saldo = params.saldo
+        ingreso.ubicacion = data.ubicacion
+        ingreso.fecha = data.fecha
+        ingreso.tipoPago = data.tipoPago
+        if(data.tipoPago === "CRÉDITO"){
+                venta.acuenta = data.acuenta
+                ingreso.cliente = data.cliente
+            if(data.acuenta>0){
+                ingreso.descripcion = "PAGO A CUENTA DE " + data.cliente.nombre
+                ingreso.importe = data.acuenta
+                ingreso.saldo = data.saldo
             }else{
                 ingreso.importe = 0
-                ingreso.saldo = params.total
+                ingreso.saldo = data.total
             }
-            Cliente.findById(params.cliente._id).exec((err, cliente)=>{
+            Cliente.findById(data.cliente._id).exec((err, cliente)=>{
                 if(err){console.log(err)}
                 cliente.cuentas.push(ingreso._id)
                 let creditoDisponible = cliente.credito_disponible
@@ -45,8 +44,8 @@ var controller = {
                 })
             })
         }else{
-            venta.acuenta = params.acuenta
-            ingreso.importe = params.total
+            venta.acuenta = data.acuenta
+            ingreso.importe = data.total
         }
         
         ingreso.save((err, ingresoSaved) => {
@@ -55,12 +54,12 @@ var controller = {
         
         Venta.estimatedDocumentCount().then(count => {
             venta.folio = count +1
-            venta.ubicacion = params.ubicacion
-            venta.cliente = params.cliente
-            venta.fecha = params.fecha
-            venta.importe = params.total
-            venta.tipoPago = params.tipoPago
-            let items = params.items
+            venta.ubicacion = data.ubicacion
+            venta.cliente = data.cliente
+            venta.fecha = data.fecha
+            venta.importe = data.total
+            venta.tipoPago = data.tipoPago
+            let items = data.items
 
             items.map(item => {
                 var ventaItem = new VentaItem()
@@ -133,8 +132,8 @@ var controller = {
     },
     
     getVentas: async (req, res) => {
-        const bd= req.params.bd
-        const conn = con(bd)
+        const user= req.body
+        const conn = con(user)
         var VentaItem = conn.model('VentaItem')
         let ventas =  await VentaItem.find({})
         // .populate('compras')
@@ -149,9 +148,8 @@ var controller = {
     },
 
     getVenta: (req, res) => {
-        const folio = req.params.folio
-        const bd= req.params.bd
-        const conn = con(bd)
+        const {user, folio}= req.body
+        const conn = con(user)
         const Venta = conn.model('Venta')
         Venta.findOne({"folio": folio })
             // .populate({
@@ -184,7 +182,7 @@ var controller = {
                     })
                 }
                 if(!venta){
-                    return res.status(200).send({
+                    return res.status(500).send({
                         status: "error",
                         message: "No existe la venta."                        
                     })
@@ -199,14 +197,13 @@ var controller = {
     },
 
     getVentasOfProduct: (req, res) => {
-        const productId = req.params.id;
-        const bd= req.params.bd
-        const conn = con(bd)
+        const {user, id}= req.body
+        const conn = con(user)
         const Venta = conn.model('Venta')
         Venta.aggregate()
             .project({"items": 1, fecha: 1, cliente: 1, tipoPago:1, })
             // .sort("items.item")
-            .match({"items.item": productId})
+            .match({"items.item": id})
             .exec((err, ventas) => {
                 conn.close()
                 if(err)console.log(err)
@@ -218,10 +215,8 @@ var controller = {
     },
 
     getResumenVentas: async (req, res) =>{
-        const bd= req.params.bd
-        const ubicacion = req.params.ubicacion
-        const fecha = req.params.fecha
-        const conn = con(bd)
+        const {user, ubicacion, fecha}= req.body
+        const conn = con(user)
         const VentaItem = conn.model('VentaItem')
         try{
             const response = await VentaItem
@@ -256,13 +251,11 @@ var controller = {
     },
 
     getVentasSemana: async (req, res) => {
-        let fecha1 = req.query.f1
-        let fecha2 = req.query.f2
-        const bd= req.params.bd
-        const conn = con(bd)
+        const {user, f1, f2}= req.body
+        const conn = con(user)
         const VentaItem = conn.model('VentaItem')
 
-        let ventas= await VentaItem.find({fecha: { $gte: fecha1, $lte: fecha2 }})
+        let ventas= await VentaItem.find({fecha: { $gte: f1, $lte: f2 }})
             .populate({path:'ubicacion', select:'nombre'})
             .populate({path:'producto', select:'descripcion'})
             .populate({path:'compraItem', select:'clasificacion'})
@@ -277,9 +270,8 @@ var controller = {
     },
 
     getVentaItems: async (req, res) => {
-        const bd= req.params.bd
-        let mes = req.params.mes
-        const conn = con(bd)
+        const {user, mes}= req.body
+        const conn = con(user)
         const VentaItem = conn.model('VentaItem')
         const Items = await VentaItem.find({
                 fecha: {$gt: "2021-"+mes+"-00" , $lt: "2021-"+mes+"-32"}
@@ -304,15 +296,13 @@ var controller = {
     },
 
     update: (req, res) => {
-        let compraId = req.params.id;
-        const bd= req.params.bd
-        const conn = con(bd)
+        const {user, data}= req.body
+        const conn = con(user)
         const Venta = conn.model('Venta')
         //recoger datos actualizados y validarlos
-        let params = req.body;
             
             // Find and update
-            Compra.findOneAndUpdate({_id: compraId}, params, {new:true}, (err, compraUpdated) => {
+            Compra.findOneAndUpdate({_id: data._id}, data, {new:true}, (err, compraUpdated) => {
                 conn.close()
                 if(err){
                     return res.status(500).send({
@@ -335,9 +325,8 @@ var controller = {
     },
 
     cancel: async (req, res) => {
-        const id = req.params.id;
-        const bd= req.params.bd
-        const conn = con(bd)
+        const {user, id}= req.body
+        const conn = con(user)
         const Venta = conn.model('Venta')
         const VentaItem = conn.model('VentaItem')
         const CompraItem = conn.model('CompraItem')
@@ -385,9 +374,6 @@ var controller = {
             venta: laventa
         })
     },
-
-    
-
 }
 
 module.exports = controller;

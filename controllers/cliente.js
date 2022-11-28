@@ -4,24 +4,23 @@ const con = require('../src/dbuser')
 const controller = {
     save: (req, res) => {
         //recoger parametros
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        const conn = con(user)
         const Cliente = conn.model('Cliente')
 
         //Crear el objeto a guardar
         let cliente = new Cliente();
 
         //Asignar valores
-        cliente.nombre = params.nombre;
-        cliente.direccion = params.direccion;
-        cliente.ubicacion = params.ubicacion;
-        cliente.rfc = params.rfc;
-        cliente.tel1 = params.tel1;
-        cliente.email = params.email;
-        cliente.limite_de_credito = params.limite_de_credito;
-        cliente.credito_disponible = params.limite_de_credito;
-        cliente.dias_de_credito = params.dias_de_credito;
+        cliente.nombre = data.nombre;
+        cliente.direccion = data.direccion;
+        cliente.ubicacion = data.ubicacion;
+        cliente.rfc = data.rfc;
+        cliente.tel1 = data.tel1;
+        cliente.email = data.email;
+        cliente.limite_de_credito = data.limite_de_credito;
+        cliente.credito_disponible = data.limite_de_credito;
+        cliente.dias_de_credito = data.dias_de_credito;
 
         //Guardar objeto
         cliente.save((err, clienteStored) => {
@@ -44,8 +43,8 @@ const controller = {
     },
 
     getClientes: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const Cliente = conn.model('Cliente')
         
         const resp = await Cliente.find({})
@@ -102,15 +101,13 @@ const controller = {
     },
 
     update: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
-        const params = req.body;
-        
+        const {user, data} = req.body;
+        const conn = con(user)
         const Cliente = conn.model('Cliente')
-
             // Find and update
-        const resp = await Cliente
-            .findByIdAndUpdate(params._id , params, { new: true } )
+            console.log(data)
+        Cliente
+            .findOneAndUpdate({_id: data._id}, data, { new: true } )
             .then( updatd => {
                 conn.close()
                 return res.status(200).send({
@@ -121,21 +118,19 @@ const controller = {
             })
             .catch(err => {
                 conn.close()
-                return res.status(200).send({
+                return res.status(401).send({
                     status: 'error',
-                    message: "No se pudo actualizar " + err
+                    message: "No se pudo actualizar " + err.message,
+                    err
                 })
             })                
     },
 
     delete: async (req, res) => {
-        const clienteId = req.params.id;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, id} = req.body
+        const conn = con(user)
         const Cliente = conn.model('Cliente')
-        const resp = await Cliente
-            .findOneAndDelete({ _id: clienteId }, (err, clienteRemoved) => {
-                conn.close()
+        Cliente.findOneAndDelete({ _id: id }, (err, clienteRemoved) => {
                 if (!clienteRemoved) {
                     return res.status(500).send({
                         status: 'error',
@@ -148,6 +143,7 @@ const controller = {
                         message: 'Ocurrio un error.'
                     })
                 }
+                conn.close()
                 return res.status(200).send({
                     status: 'success',
                     message: 'Cliente eliminado correctamente.',

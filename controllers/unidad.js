@@ -3,17 +3,16 @@ const con = require('../src/dbuser')
 
 const controller = {
     save: (req, res) => {
-        const bd= req.params.bd
-        const conn = con(bd)
-        const params = req.body;
+        const {user, data} = req.body
+        const conn = con(user)
         const Unidad = conn.model('Unidad')
 
         //Crear el objeto a guardar
         let unidad = new Unidad();
             
         //Asignar valores
-        unidad.unidad = params.unidad;
-        unidad.abr = params.abr;
+        unidad.unidad = data.unidad;
+        unidad.abr = data.abr;
 
         //Guardar objeto
         unidad.save((err, unidadStored) => {
@@ -35,8 +34,8 @@ const controller = {
     },
 
     getUnidades: (req, res) => {
-        const bd= req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const Unidad = conn.model('Unidad')
         Unidad.find({}).sort('_id').exec( (err, unidads) => {
             conn.close()
@@ -54,9 +53,9 @@ const controller = {
     },
 
     delete: (req, res) => {
-        const bd= req.params.bd
-        const unidadId = req.params.id;
-        const conn = con(bd)
+        const {user, id} = req.body
+        const unidadId = id;
+        const conn = con(user)
         const Unidad = conn.model('Unidad')
 
         Unidad.findOneAndDelete({_id: unidadId}, (err, unidadRemoved) => {

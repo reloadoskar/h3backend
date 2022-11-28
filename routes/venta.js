@@ -6,13 +6,13 @@ var VentaController = require('../controllers/venta');
 var router = express.Router();
 
 //Rutas
-router.post('/:bd/venta/save', VentaController.save);
-// router.get('/:bd/ventas', VentaController.getVentas);
-router.get('/:bd/ventas/mes/:mes', VentaController.getVentaItems);
-router.get('/:bd/ventas/:ubicacion/:fecha', VentaController.getResumenVentas)
-router.get('/:bd/venta/producto/:id', VentaController.getVentasOfProduct);
-router.get('/:bd/venta/:folio', VentaController.getVenta);
-router.delete('/:bd/venta/:id', VentaController.cancel);
-router.get('/:bd/ventas/semana', VentaController.getVentasSemana);
+// router.post('/:bd/ventas', VentaController.getVentas);
+router.post('/venta/save', VentaController.save);
+router.post('/ventas/mes/:mes', VentaController.getVentaItems);
+router.post('/ventas/:ubicacion/:fecha', VentaController.getResumenVentas)
+router.post('/venta/producto/:id', VentaController.getVentasOfProduct);
+router.post('/venta', VentaController.getVenta);
+router.post('/venta/:id', VentaController.cancel);
+router.post('/ventas/semana', VentaController.getVentasSemana);
 
 module.exports = router;

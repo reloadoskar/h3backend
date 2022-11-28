@@ -5,9 +5,8 @@ const con = require('../src/dbuser')
 
 var controller = {
     save: (req, res) => {
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        const conn = con(user)
         const Compra = conn.model('Compra')
         const CompraItem = conn.model('CompraItem')
         const Egreso = conn.model('Egreso')
@@ -17,30 +16,30 @@ var controller = {
             var compra = new Compra();
             compra._id = mongoose.Types.ObjectId()
             compra.folio = count + 1
-            compra.provedor = params.provedor
-            compra.ubicacion = params.ubicacion
-            compra.tipoCompra = params.tipoCompra
-            compra.remision = params.remision
-            compra.importe = params.importe
-            compra.saldo = params.importe
-            compra.fecha = params.fecha
+            compra.provedor = data.provedor
+            compra.ubicacion = data.ubicacion
+            compra.tipoCompra = data.tipoCompra
+            compra.remision = data.remision
+            compra.importe = data.importe
+            compra.saldo = data.importe
+            compra.fecha = data.fecha
             compra.status = 'ACTIVO'
 
             Provedor.findById(compra.provedor).exec((err, prov) => {
                 if (err) { console.log(err) }
                 // prov.cuentas.push(compra._id)
                 // prov.save()
-                Compra.countDocuments({ provedor: params.provedor._id })
+                Compra.countDocuments({ provedor: data.provedor._id })
                     .then(c => {
                         let sigCompra = c + 1
-                        compra.clave = params.provedor.clave + "-" + sigCompra
+                        compra.clave = data.provedor.clave + "-" + sigCompra
 
-                        let i = params.items
+                        let i = data.items
                         let itmsToSave = []
                         i.map((item) => {
                             let compraItem = {}
                             compraItem._id = mongoose.Types.ObjectId()
-                            compraItem.ubicacion = params.ubicacion
+                            compraItem.ubicacion = data.ubicacion
                             compraItem.clasificacion = "S/C"
                             compraItem.compra = compra._id
                             compraItem.producto = item.producto._id
@@ -60,7 +59,7 @@ var controller = {
                             })
 
                             Egreso.estimatedDocumentCount().then(c => {
-                                let g = params.gastos
+                                let g = data.gastos
                                 let cgastos = []
                                 g.map((gasto) => {
                                     var egreso = new Egreso()
@@ -99,7 +98,7 @@ var controller = {
                                         egItm.concepto = "COMPRA"
                                         egItm.fecha = compra.fecha
                                         egItm.importe = 0
-                                        egItm.saldo = params.importeItems
+                                        egItm.saldo = data.importeItems
                                         egItm.compra = compra._id
                                         prov.cuentas.push(egItm._id)
                                         egItm.save((err, e) => {
@@ -174,13 +173,11 @@ var controller = {
     },
 
     getCompras: async (req, res) => {
-        const bd = req.params.bd
-        let mes = req.params.mes
-        let year = req.params.year
+        const {user, mes, year} = req.body
         // if (mes < 10) {
         //     mes = "0" + mes
         // }
-        const conn = con(bd)
+        const conn = con(user)
         const Compra = conn.model('Compra')
         const Liquidacion = conn.model('Liquidacion')
         const compra = await Compra

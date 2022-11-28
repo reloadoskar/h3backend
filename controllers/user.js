@@ -1,4 +1,5 @@
 'use strict'
+const mongoose = require('mongoose')
 const conexion_app = require('../src/db')
 const con = require('../src/dbuser')
 const bcrypt = require('bcrypt')
@@ -11,11 +12,11 @@ process.env.SECRET_KEY = 'muffintop'
 
 const controller = {
     update: (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
-        const params = req.body;
+        const {user, data} = req.body
+        const conn = con(user)
+        const params = data;
         const Empleado = conn.model('Empleado')
-        console.log(params)
+        // console.log(params)
         Empleado.findOneAndUpdate({_id: params._id}, params, {new:true}, (err, empleadoUpdated) => {
             conn.close()
             if(err){
@@ -32,14 +33,14 @@ const controller = {
             }
             return res.status(200).send({
                 status: 'success',
+                message: "Actualizado.",
                 empleado: empleadoUpdated
             })
         })
     },
     getEmpleados: async (req, res) => {
-        const bd= req.params.bd
-        const conn = con(bd)
-        
+        const user = req.body
+        const conn = con(user)        
         try{
             const Empleado = conn.model('Empleado')
             const r = await Empleado.find()
@@ -58,44 +59,43 @@ const controller = {
     },
     
     addEmpleado: (req, res) => {
+        const {user, data} = req.body
         const conn = conexion_app()
-        const bd = req.params.bd
-        const conn2 = con(bd)
-        const params = req.body
+        const conn2 = con(user)
         // console.log(params)
         const User = conn.model('User')
         const Empleado = conn2.model('Empleado')
         // Creo un usuario para accesar a BD
         try{
             let nusr = new User()
-            if(params.area.level < 5){
-                nusr.level = params.level
-                nusr.nombre = params.nombre
-                nusr.telefono = params.telefono
-                nusr.email = params.email
-                nusr.database = bd
+            if(data.area.level < 5){
+                nusr.level = data.level
+                nusr.nombre = data.nombre
+                nusr.telefono = data.telefono
+                nusr.email = data.email
+                nusr.database = user.database
                 nusr.fechaInicio = curDateISO
                 nusr.tryPeriodEnds = tryPeriod
                 nusr.paidPeriodEnds = tryPeriod
-                bcrypt.hash(params.password, 10, (err, hash) =>{
+                bcrypt.hash(data.password, 10, (err, hash) =>{
                     nusr.password = hash
-                    nusr.save()
+                    nusr.save().catch(err=>{console.log(err)})
                 })
             }
             //Creo un Empleado en BD local
             let nempleado = new Empleado()
             nempleado._id = nusr._id
-            nempleado.nombre = params.nombre
-            nempleado.edad = params.edad
-            nempleado.level = params.area.level
-            nempleado.sexo = params.sexo
-            nempleado.sueldo = params.sueldo
-            nempleado.ubicacion = params.ubicacion
-            nempleado.direccion = params.direccion
-            nempleado.telefono = params.telefono
-            nempleado.email = params.email
-            nempleado.instagram = params.instagram
-            nempleado.facebook = params.facebook
+            nempleado.nombre = data.nombre
+            nempleado.edad = data.edad
+            nempleado.level = data.area.level
+            nempleado.sexo = data.sexo
+            nempleado.sueldo = data.sueldo
+            nempleado.ubicacion = data.ubicacion
+            nempleado.direccion = data.direccion
+            nempleado.telefono = data.telefono
+            nempleado.email = data.email
+            nempleado.instagram = data.instagram
+            nempleado.facebook = data.facebook
             nempleado.save((err, usrSvd) => {
                 conn.close()
                 if(err){console.log(err)}
@@ -112,9 +112,9 @@ const controller = {
 
     },
     delEmpleado: (req,res) =>{
-        const bd = req.params.bd
-        const empleadoId = req.params.id
-        const conn = con(bd)
+        const {user, id} = req.body
+        const empleadoId = id
+        const conn = con(user)
         const bdMaster = conexion_app()
         const Empleado = conn.model('Empleado')
         const User = bdMaster.model('User')
@@ -272,76 +272,133 @@ const controller = {
         })
     },
 
-    login: (req, res) => {
-        try{
-        const conn = conexion_app()
-        const User = conn.model('User')
+    login: async (req, res) => {
         const {usuario, password} = req.body
-            User.findOne({
-                email: usuario
-            })
-            .lean()
-            .then( user => {
-                // console.log(user)
-                if(user){
-                    if(bcrypt.compareSync(password, user.password)){
-                        const conn2 = con(user.database)
-                        const Empleado = conn2.model('Empleado')
-                        Empleado.findById(user._id)
-                        .populate('ubicacion')
-                        // .lean()
-                        .then(emp => {
-                            conn2.close()
-                            conn.close()
-                            const payload = {
-                                _id: emp._id,
-                                nombre: emp.nombre,
-                                apellido: emp.apellido,
-                                email: emp.email,
-                                ubicacion: emp.ubicacion,
-                                level: emp.level,
-                                database: user.database,
-                                tryPeriodEnds: user.tryPeriodEnds,
-                                paidPeriodEnds: user.paidPeriodEnds,
-                            }
-                            let token = jwt.sign(payload, process.env.SECRET_KEY, {
-                                expiresIn: '12h'
-                            })
-                            return res.status(200).send({
-                                status: 'success',
-                                message: 'Bienvenido '+payload.nombre,
-                                token
-                            })
-                        })
-                        .catch(err => {
-                            console.log(err)
-                            conn2.close()
-                            conn.close()
-                            return res.status(200).send({
-                                status: 'error',
-                                message: "El empleado es incorrecto.",
-                                err
-                            })    
-                        })
-                    }else{
-                        return res.status(200).send({
-                            status: 'error',
-                            message: "El usuario o la contraseña son incorrectos."
-                        })
-                    }
-                }else{
-                    return res.status(200).send({
-                        status: 'error',
-                        message: "El usuario no existe."
-                    })
-                }
-            })
-            .catch(err => {
-                return res.status(200).send({
-                    status: "error",
-                    message: "Algo paso con la BASE DE DATOS."+err,
-                })
-            })
+        let errorStatusCode = 500;
+        try{
+            console.log("Conenctando...")
+            const conn = await conexion_app()
+        if(!conn){
+            errorStatusCode="401"
+            throw new Error('Error al conectar a la bd')
+        }
+        const Usuario = conn.model('User')
+        console.log("Buscando usuario...")
+        const existingUser = await Usuario.findOne({ email: usuario });
+        if (existingUser == null) {
+            errorStatusCode = 401;
+            throw new Error(`Usuario y password invalidos`);
+        }
+        const isMatch = await bcrypt.compareSync(password, existingUser.password);
+        if (!isMatch) {
+            errorStatusCode = 401;
+            throw new Error(`Password incorrecto`);
+        }
+        console.log("Conectando a la BD del usuario...")
+        const newConn = await con(existingUser)
+        if(!newConn){
+            errorStatusCode="401"
+            throw new Error('Error al cambiar la bd')
+        }
+
+        const Empleado = newConn.model('Empleado', require('../schemas/empleado'))
+        console.log("=> Recopilando datos del usuario en su database...")
+        const empleado = await Empleado.findById(existingUser._id)
+        if(!empleado){
+        errorStatusCode = 401
+        throw new Error('No se encontro el No. de empleado.')
+        }
+
+        const payload = {
+            _id: empleado._id,
+            nombre: empleado.nombre,
+            apellido: empleado.apellido,
+            email: empleado.email,
+            ubicacion: empleado.ubicacion,
+            level: empleado.level,
+            database: existingUser.database,
+            tryPeriodEnds: empleado.tryPeriodEnds,
+            paidPeriodEnds: empleado.paidPeriodEnds,
+        }
+
+        let token = await jwt.sign(payload, process.env.SECRET_KEY, { expiresIn: '12h' })
+
+        if(!token){
+            errorStatusCode = 401
+            throw new Error('No se genero el token.')
+        }
+        console.log("Token generado, Bienvenido. 🤜🤛")
+        return res.status(200).send({
+            status: 'success',
+            message: 'Bienvenido '+payload.nombre,
+            token: token
+        })
+
+            // User.findOne({
+            //     email: usuario
+            // })
+            // .lean()
+            // .then( user => {
+            //     // console.log(user)
+            //     if(user){
+            //         if(bcrypt.compareSync(password, user.password)){
+            //             const conn2 = con(user.database)
+            //             const Empleado = conn2.model('Empleado')
+            //             Empleado.findById(user._id)
+            //             .populate('ubicacion')
+            //             // .lean()
+            //             .then(emp => {
+            //                 conn2.close()
+            //                 conn.close()
+            //                 const payload = {
+            //                     _id: emp._id,
+            //                     nombre: emp.nombre,
+            //                     apellido: emp.apellido,
+            //                     email: emp.email,
+            //                     ubicacion: emp.ubicacion,
+            //                     level: emp.level,
+            //                     database: user.database,
+            //                     tryPeriodEnds: user.tryPeriodEnds,
+            //                     paidPeriodEnds: user.paidPeriodEnds,
+            //                 }
+            //                 let token = jwt.sign(payload, process.env.SECRET_KEY, {
+            //                     expiresIn: '12h'
+            //                 })
+            //                 return res.status(200).send({
+            //                     status: 'success',
+            //                     message: 'Bienvenido '+payload.nombre,
+            //                     token
+            //                 })
+            //             })
+            //             .catch(err => {
+            //                 console.log(err)
+            //                 conn2.close()
+            //                 conn.close()
+            //                 return res.status(200).send({
+            //                     status: 'error',
+            //                     message: "El empleado es incorrecto.",
+            //                     err
+            //                 })    
+            //             })
+            //         }else{
+            //             return res.status(200).send({
+            //                 status: 'error',
+            //                 message: "El usuario o la contraseña son incorrectos."
+            //             })
+            //         }
+            //     }else{
+            //         return res.status(200).send({
+            //             status: 'error',
+            //             message: "El usuario no existe."
+            //         })
+            //     }
+            // })
+            // .catch(err => {
+            //     return res.status(200).send({
+            //         status: "error",
+            //         message: "Algo paso con la BASE DE DATOS."+err,
+            //     })
+            // })
         }catch(err){
             console.log(err)
             return res.status(500).send({

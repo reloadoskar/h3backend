@@ -4,17 +4,16 @@ const con = require('../src/dbuser')
 const controller = {
     save: (req, res) => {
         //recoger parametros
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        const conn = con(user)
         const Ubicacion = conn.model('Ubicacion')
 
             //Crear el objeto a guardar
             let ubicacion = new Ubicacion();
             
             //Asignar valores
-            ubicacion.nombre = params.nombre.toUpperCase();
-            ubicacion.tipo = params.tipo.toUpperCase();
+            ubicacion.nombre = data.nombre.toUpperCase();
+            ubicacion.tipo = data.tipo.toUpperCase();
 
             //Guardar objeto
             ubicacion.save((err, ubicacionStored) => {
@@ -22,7 +21,7 @@ const controller = {
                 if(err || !ubicacionStored){
                     return res.status(404).send({
                         status: 'error',
-                        message: 'El ubicacion no se guardó'
+                        message: 'La ubicacion no se guardó'
                     })
                 }
                 return res.status(200).send({
@@ -35,8 +34,8 @@ const controller = {
     },
 
     getUbicacions: (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const Ubicacion = conn.model('Ubicacion')
         Ubicacion.find({}).sort('tipo').exec( (err, ubicacions) => {
             conn.close()
@@ -80,13 +79,11 @@ const controller = {
     },
 
     update: (req, res) => {
-        const ubicacionId = req.params.id;
-        const bd = req.params.bd
-        const conn = con(bd)
-        const params = req.body;
+        const {user, data} = req.body;
+        const conn = con(user)
         const Ubicacion = conn.model('Ubicacion')
     
-        Ubicacion.findOneAndUpdate({_id: ubicacionId}, params, {new:true}, (err, ubicacionUpdated) => {
+        Ubicacion.findOneAndUpdate({_id: data._id}, data, {new:true}, (err, ubicacionUpdated) => {
             conn.close()
             if(err){
                 return res.status(500).send({
@@ -102,6 +99,7 @@ const controller = {
             }
             return res.status(200).send({
                 status: 'success',
+                message: 'Actualizado correctamente. 👍',
                 ubicacion: ubicacionUpdated
             })
         })

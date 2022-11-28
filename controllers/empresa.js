@@ -2,21 +2,42 @@
 const con = require('../src/dbuser')
 const controller = {
     save: async (req, res) => {
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
-        const Empresa = conn.model('Empresa')
+        const {user, data} = req.body;
+        let errorStatusCode = 500;
+        try {
+            const conn = con(user)
+            const Empresa = conn.model('Empresa')
+    
+            let nEmpresa = Empresa.create(data)
+            
+            if(!nEmpresa){
+                conn.close()
+                errorStatusCode = 401;
+                throw new Error('No se creó la empresa');
+            }
+
+            return res.status(200).send({
+                status: 'succes',
+                message: 'Se guardo correctamente',
+                empresa: nEmpresa
+            })
+            
+        } catch (error) {
+            return res.status(errorStatusCode).send({
+                status: 'error',
+                message: error.message,
+            })
+        }
 
 
     },
     get: async (req, res) => {
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body;
+        const conn = con(user)
         const Empresa = conn.model('Empresa')
 
         const resp = await Empresa
-            .findOne({bd: bd})
+            .findOne({bd: user.database})
             .populate('pagos')
             .lean()
             .then( empresa => {
@@ -48,12 +69,12 @@ const controller = {
             })
     },
     update: async (req, res) => {
-        const empresa = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        const conn = con(user)
         const Empresa = conn.model('Empresa')
+        console.log(data)
         const resp = await Empresa
-            .findOneAndUpdate({ _id: empresa._id }, empresa, { new: true })
+            .findOneAndUpdate({ _id: data._id }, data, { new: true })
             .then(empSaved =>{
                 conn.close()
                 return res.status(200).send({

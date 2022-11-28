@@ -11,7 +11,7 @@ module.exports = function conexionLobby(){
   });
   conn.model('User', require('../schemas/user'))
   conn.once("open", function() {
-      console.log("HADRIA_2 On-Line");
+      console.log("CONECTADO A LA BD HADRIA3");
   });
   conn.on('error',(err) =>{
     conn.close()

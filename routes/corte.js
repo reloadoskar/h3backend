@@ -7,10 +7,10 @@ var router = express.Router();
 
 //Rutas
 // router.get('/corte/ventas/:ubicacion/:fecha', CorteController.getVentas)
-router.get('/:bd/corte/:ubicacion/:fecha', CorteController.getData)
-router.post('/:bd/corte/save', CorteController.save)
-router.get('/:bd/corte/exist/:ubicacion/:fecha', CorteController.exist);
-router.get('/:bd/corte/open/:ubicacion/:fecha', CorteController.open);
+router.post('/corte', CorteController.getData)
+router.post('/corte/save', CorteController.save)
+router.post('/corte/exist', CorteController.exist);
+router.post('/corte/open/', CorteController.open);
 // router.put('/compra/:id', CompraController.update);
 // router.delete('/compra/:id', CompraController.delete);
 

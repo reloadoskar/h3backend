@@ -6,11 +6,11 @@ var UbicacionController = require('../controllers/ubicacion');
 var router = express.Router();
 
 //Rutas
-router.post('/:bd/ubicacion/save', UbicacionController.save);
-router.get('/:bd/ubicacions', UbicacionController.getUbicacions);
-router.get('/:bd/ubicacions/saldo', UbicacionController.getUbicacionsSaldo);
-router.get('/:bd/ubicacion/:id', UbicacionController.getUbicacion);
-router.put('/:bd/ubicacion/update/:id', UbicacionController.update);
-router.delete('/:bd/ubicacion/:id', UbicacionController.delete);
+router.post('/ubicacions', UbicacionController.getUbicacions);
+router.post('/ubicacion/save', UbicacionController.save);
+router.post('/ubicacions/saldo', UbicacionController.getUbicacionsSaldo);
+router.post('/ubicacion', UbicacionController.getUbicacion);
+router.post('/ubicacion/update', UbicacionController.update);
+router.post('/ubicacion/delete', UbicacionController.delete);
 
 module.exports = router;

@@ -12,18 +12,19 @@ router.use(cors())
 
 
 //Rutas
-router.post('/client/register', UserController.save);
 router.post('/user/login', UserController.login)
+router.post('/client/register', UserController.save);
 router.get('/profile', UserController.profile)
 router.get('/logout', UserController.logout)
 router.get('/:bd/restartApp', UserController.restartApp)
 
-router.get('/:bd/empleados', UserController.getEmpleados)
-router.post('/:bd/empleados/add', UserController.addEmpleado)
-router.delete('/:bd/empleado/:id', UserController.delEmpleado)
-router.put('/:bd/empleado/update/', UserController.update);
+router.post('/empleados', UserController.getEmpleados)
+router.post('/empleados/save', UserController.addEmpleado)
+router.post('/empleado/delete', UserController.delEmpleado)
+router.post('/empleado/update', UserController.update);
 
-router.get('/:bd/empresa', EmpresaController.get);
-router.put('/:bd/empresa/update/', EmpresaController.update);
+router.post('/empresa', EmpresaController.get);
+router.post('/empresa/save', EmpresaController.save);
+router.post('/empresa/update', EmpresaController.update);
 
 module.exports = router;

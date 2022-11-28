@@ -3,31 +3,27 @@ const con = require('../src/dbuser')
 
 const controller = {
     save: (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
-        const params = req.body;
+        const {user, data} = req.body
+        const conn = con(user)
         const Producto = conn.model('Producto')
 
         let producto = new Producto();
-            
-            //Asignar valores
-            producto.clave = params.clave.toUpperCase();
-            producto.descripcion = params.descripcion.toUpperCase();
-            producto.costo = params.costo;
-            producto.unidad = params.unidad;
-            producto.empaque = params.empaque;
-            producto.precio1 = params.precio1;
-            producto.precio2 = params.precio2;
-            producto.precio3 = params.precio3;
+            producto.clave = data.clave.toUpperCase();
+            producto.descripcion = data.descripcion.toUpperCase();
+            producto.costo = data.costo;
+            producto.unidad = data.unidad;
+            producto.empaque = data.empaque;
+            producto.precio1 = data.precio1;
+            producto.precio2 = data.precio2;
+            producto.precio3 = data.precio3;
 
             //Guardar objeto
             producto.save((err, productoStored) => {
-                // productoStored.populate("unidad").lean()
                 conn.close()
                 if(err || !productoStored){
-                    return res.status(200).send({
+                    return res.status(500).send({
                         status: 'error',
-                        message: 'El producto no se guardó'
+                        message: 'El producto no se guardó'+err.message
                     })
                 }
                 return res.status(200).send({
@@ -36,12 +32,11 @@ const controller = {
                     producto: productoStored
                 })
             })
-
     },
 
     getProductos: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const Producto = conn.model('Producto')
         const Unidad = conn.model('Unidad')
         const Empaque = conn.model('Empaque')
@@ -102,23 +97,20 @@ const controller = {
     },
 
     getProductosMasVendidos: (req, res) => {
-        const year = req.params.year
-        const month = req.params.month
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, year, month} = req.body
+        const conn = con(user)
         const Producto = conn.model('Producto')
     },
 
     update: (req, res) => {
-        const productoId = req.body._id;
-        const bd = req.params.bd
-        const conn = con(bd)
-        const params = req.body;
-        params.empaque = req.body.empaque._id
-        params.unidad = req.body.unidad._id
+        const {user, data} = req.body;
+        const conn = con(user)
+        const params = data;
+        params.empaque = data.empaque._id
+        params.unidad = data.unidad._id
         const Producto = conn.model('Producto')
 
-        Producto.findOneAndUpdate({_id: productoId}, params, {new:true}, (err, productoUpdated) => {
+        Producto.findOneAndUpdate({_id: data._id}, params, {new:true}, (err, productoUpdated) => {
             conn.close()
             if(err){
                 return res.status(500).send({

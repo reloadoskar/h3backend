@@ -3,17 +3,16 @@ const con = require('../src/dbuser')
 
 const controller = {
     save: (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        const conn = con(user)
         const Concepto = conn.model('Concepto')
         //recoger parametros
-        const params = req.body;
 
         //Crear el objeto a guardar
         let concepto = new Concepto();
             
         //Asignar valores
-        concepto.concepto = params.concepto;
+        concepto.concepto = data.concepto;
 
         //Guardar objeto
         concepto.save((err, conceptoStored) => {
@@ -36,8 +35,8 @@ const controller = {
     },
 
     getConceptos: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const Concepto = conn.model('Concepto')
         const resp = await Concepto
             .find({})
@@ -60,12 +59,11 @@ const controller = {
     },
 
     delete: (req, res) => {
-        const conceptoId = req.params.id;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, id} = req.body
+        const conn = con(user)
         const Concepto = conn.model('Concepto')
 
-        Concepto.findOneAndDelete({_id: conceptoId}, (err, conceptoRemoved) => {
+        Concepto.findOneAndDelete({_id: id}, (err, conceptoRemoved) => {
             conn.close()
             if(!conceptoRemoved){
                 return res.status(500).send({

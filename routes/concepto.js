@@ -6,8 +6,8 @@ var ConceptoController = require('../controllers/concepto');
 var router = express.Router();
 
 //Rutas
-router.get('/:bd/conceptos', ConceptoController.getConceptos)
-router.post('/:bd/concepto/save', ConceptoController.save);
-router.delete('/:bd/concepto/:id', ConceptoController.delete)
+router.post('/conceptos', ConceptoController.getConceptos)
+router.post('/concepto/save', ConceptoController.save);
+router.post('/concepto/delete', ConceptoController.delete)
 
 module.exports = router;

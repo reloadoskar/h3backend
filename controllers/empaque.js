@@ -2,13 +2,12 @@
 const con = require('../src/dbuser')
 const controller = {    
     save: async (req, res) => {
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        const conn = con(user)
         const Empaque = conn.model('Empaque')
 
         const resp = await Empaque
-            .create(params)
+            .create(data)
             .then(empaqueStored => {
                 conn.close()
                 return res.status(200).send({
@@ -28,8 +27,8 @@ const controller = {
     },
 
     getEmpaques: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const Empaque = conn.model('Empaque')
         const resp = await Empaque.find({})
             .sort('_id')
@@ -52,13 +51,12 @@ const controller = {
     },
 
     delete: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
-        const empaqueId = req.params.id;
+        const {user, id} = req.body
+        const conn = con(user)
         const Empaque = conn.model('Empaque')
 
         const resp = await Empaque
-            .findOneAndDelete({_id: empaqueId})
+            .findOneAndDelete({_id: id})
             .then(empaqueRemoved => {
                 conn.close()
                 return res.status(200).send({

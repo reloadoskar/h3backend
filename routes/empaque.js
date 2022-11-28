@@ -6,8 +6,8 @@ var EmpaqueController = require('../controllers/empaque');
 var router = express.Router();
 
 //Rutas
-router.get('/:bd/empaques', EmpaqueController.getEmpaques)
-router.post('/:bd/empaque/save', EmpaqueController.save);
-router.delete('/:bd/empaque/:id', EmpaqueController.delete)
+router.post('/empaques', EmpaqueController.getEmpaques)
+router.post('/empaque/save', EmpaqueController.save);
+router.post('/empaque/delete', EmpaqueController.delete)
 
 module.exports = router;

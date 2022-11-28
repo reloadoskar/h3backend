@@ -2,46 +2,45 @@
 const con = require('../src/dbuser')
 const controller = {
     save: async (req, res) => {
-        //recoger parametros
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        console.log(data)
+        const conn = con(user)
         const Egreso = conn.model('Egreso')
         const Compra = conn.model('Compra')
         const Inversion = conn.model('Inversion')
 
         let egreso = new Egreso()
-        if(params.compra !== 1){
-            const compra = await Compra.findById(params.compra)
-            if(params.tipo==="PAGO"){
+        if(data.compra !== 1){
+            const compra = await Compra.findById(data.compra)
+            if(data.tipo==="PAGO"){
                 compra.pagos.push(egreso._id)
             }else{
                 compra.gastos.push(egreso._id)
             }
             compra.save()
             
-            egreso.compra = params.compra
-            egreso.cuenta = params.cuenta
+            egreso.compra = data.compra
+            egreso.cuenta = data.cuenta
         }
 
-        if(params.inversion){
-            const inversion = await Inversion.findById(params.inversion)
+        if(data.inversion){
+            const inversion = await Inversion.findById(data.inversion)
             inversion.gastos.push(egreso._id)
             inversion.save()
             
-            egreso.inversion = params.inversion
+            egreso.inversion = data.inversion
         }
 
         const resp = await Egreso
         .estimatedDocumentCount()
         .then(count => {
             egreso.folio = ++count
-            egreso.ubicacion = params.ubicacion
-            egreso.concepto = params.concepto
-            egreso.tipo = params.tipo
-            egreso.descripcion = params.descripcion
-            egreso.fecha = params.fecha
-            egreso.importe = params.importe
+            egreso.ubicacion = data.ubicacion
+            egreso.concepto = data.concepto
+            egreso.tipo = data.tipo
+            egreso.descripcion = data.descripcion
+            egreso.fecha = data.fecha
+            egreso.importe = data.importe
             egreso.saldo = 0
                 egreso.save((err, egreso) => {
                     conn.close()
@@ -61,8 +60,8 @@ const controller = {
     },
 
     getEgresos: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const Egreso = conn.model('Egreso')
         const resp = await Egreso
             .find({saldo:{$eq:0}}).sort({fecha: -1, createdAt: -1})
@@ -86,20 +85,11 @@ const controller = {
     },
 
     getEgreso: async (req, res) => {
-        const egresoId = req.params.id;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, id} = req.body
+        const conn = con(user)
         const Egreso = conn.model('Egreso')
-        if (!egresoId) {
-            conn.close()
-            return res.status(404).send({
-                status: 'error',
-                message: 'No existe el egreso'
-            })
-        }
-
         const resp = await Egreso
-            .findById(egresoId)
+            .findById(id)
             .lean()
             .populate('compra', 'clave')
             .then( egreso => {
@@ -120,14 +110,13 @@ const controller = {
     },
 
     update: async (req, res) => {
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        const conn = con(user)
         const Egreso = conn.model('Egreso')
 
             // Find and update
         const resp = await Egreso
-            .findOneAndUpdate({ _id: params._id }, params, { new: true })
+            .findOneAndUpdate({ _id: data._id }, data, { new: true })
             .then(egresoUpdated => {
                 conn.close()
                 return res.status(200).send({
@@ -147,12 +136,12 @@ const controller = {
     },
 
     delete: (req, res) => {
-        const egresoId = req.params.id;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, id} = req.body
+        console.log(req.body)
+        const conn = con(user)
         const Egreso = conn.model('Egreso')
         
-        Egreso.findOneAndDelete({ _id: egresoId }, (err, egresoRemoved) => {
+        Egreso.findOneAndDelete({ _id: id }, (err, egresoRemoved) => {
             conn.close()
             if (err || !egresoRemoved) {
                 return res.status(200).send({
@@ -165,15 +154,11 @@ const controller = {
                 egresoRemoved
             })
         })
-        
-
-
     },
 
     getEgresosDelDia: (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
-        const fecha = req.params.fecha
+        const {user, fecha} = req.body
+        const conn = con(user)
     
         const Egreso = conn.model('Egreso')
         try{
@@ -201,13 +186,8 @@ const controller = {
     },
 
     getEgresosMonthYear: async (req, res) =>{
-        const bd = req.params.bd
-        const conn = con(bd)
-        let month = req.params.month
-        const year = req.params.year
-        // if (month < 10) {
-        //     month = "0" + month
-        // }
+        const {user, year, month} = req.body
+        const conn = con(user)        
         const Egreso = conn.model('Egreso')
 
         const eg = Egreso

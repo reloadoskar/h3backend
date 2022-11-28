@@ -159,10 +159,8 @@ var controller = {
 
     // },
     getData: async(req,res)=>{
-        const ubicacionid = req.params.ubicacion;
-        const fecha = req.params.fecha;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, ubicacion, fecha} = req.body
+        const conn = con(user)
         const VentaItem = conn.model('VentaItem')
         const Venta = conn.model('Venta')
         const Egreso = conn.model('Egreso')
@@ -170,7 +168,7 @@ var controller = {
         const Ubicacion = conn.model('Ubicacion')
         const Corte = conn.model('Corte')
 
-        var ecorte = await Corte.find({fecha:fecha,ubicacion: ubicacionid}).populate('ubicacion').lean()
+        var ecorte = await Corte.find({fecha:fecha,ubicacion: ubicacion}).populate('ubicacion').lean()
 
             if(ecorte.length===1){
                 return res.status(200).send({
@@ -184,11 +182,11 @@ var controller = {
                 corte.status="ABIERTO"
                 
                 const ub = await Ubicacion
-                .findById(ubicacionid)
+                .findById(ubicacion)
                 .lean()
                 corte.ubicacion = ub
                 
-                const ventaItems = await VentaItem.find({ubicacion: ubicacionid, fecha: fecha})
+                const ventaItems = await VentaItem.find({ubicacion: ubicacion, fecha: fecha})
                     .populate({path:'venta',select: 'ubicacion folio cliente pesadas fecha tipoPago acuenta', populate:{path:'cliente',select: 'nombre'}})
                     .populate({path:'venta',populate:{path:'ubicacion',select: 'nombre'}})
                     .populate({path:'compra', select: 'folio'})
@@ -199,7 +197,7 @@ var controller = {
                 corte.ventaPorCompraItem = agrupaVentaItemsPorCompraItem(ventaItems)
                 // corte.ventas = agrupaVentaItemsPorVenta(ventaItems)
 
-                const ventas = await Venta.find({ubicacion: ubicacionid, fecha: fecha})
+                const ventas = await Venta.find({ubicacion: ubicacion, fecha: fecha})
                     .populate({path:'ubicacion', select: 'nombre'})
                     .populate({path:'cliente', select:'nombre'})
                     .populate({path:'items', select: 'compra compraItem pesadas', 
@@ -211,7 +209,7 @@ var controller = {
                 
                 const egresos = await Egreso
                 .find({
-                        ubicacion: ubicacionid, 
+                        ubicacion: ubicacion, 
                         fecha: fecha, 
                         tipo: {$ne: 'COMPRA'}})
                     .select("ubicacion concepto descripcion fecha importe")
@@ -220,7 +218,7 @@ var controller = {
                     corte.egresos = egresos
                     
                     const ingresos = await Ingreso
-                    .find({"ubicacion": ubicacionid, "fecha": fecha, concepto: {$ne: 'VENTA'}})
+                    .find({"ubicacion": ubicacion, "fecha": fecha, concepto: {$ne: 'VENTA'}})
                     .select('ubicacion concepto descripcion fecha importe')
                     .lean()
                     .populate('ubicacion')
@@ -228,7 +226,7 @@ var controller = {
                     corte.ingresos = ingresos
                     
                     const creditos = await Venta
-                    .find({"tipoPago": 'CRÉDITO', "ubicacion": ubicacionid, "fecha": fecha })
+                    .find({"tipoPago": 'CRÉDITO', "ubicacion": ubicacion, "fecha": fecha })
                     .select('folio ubicacion cliente tipoPago acuenta items saldo importe')
                     .lean()
                     .populate({path:'cliente', select:'nombre tel1 email limite_de_credito'})
@@ -253,9 +251,8 @@ var controller = {
     },
 
     save: (req, res) => {
-        const data = req.body
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body
+        const conn = con(user)
         const Corte = conn.model('Corte')
         const Egreso = conn.model('Egreso')
         const Ingreso = conn.model('Ingreso')
@@ -323,10 +320,8 @@ var controller = {
     },
 
     exist: async (req, res) => {
-        const ubicacion = req.params.ubicacion;
-        const fecha = req.params.fecha;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, ubicacion, fecha} = req.body
+        const conn = con(user)
         const Corte = conn.model('Corte')
         
         try{
@@ -357,22 +352,20 @@ var controller = {
     },
 
     open: async (req, res) => {
-        const ubicacion = req.params.ubicacion;
-        const fecha = req.params.fecha;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, ubicacion, fecha} = req.body
+        const conn = con(user)
         const Corte = conn.model('Corte')
 
         try{
 
             const resp = await Corte
                 .deleteOne({ubicacion: ubicacion, fecha: fecha})
-                .then(r => {
+                .then(corte => {
                     conn.close()
                     return res.status(200).send({
                         status: 'success',
                         message: 'El corte ahora esta abierto.',
-                        r
+                        corte
                     })
                 })
                 .catch(err => {

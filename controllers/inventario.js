@@ -3,8 +3,8 @@ const mongoose = require('mongoose')
 const con = require('../src/dbuser')
 var controller = {
     getInventario: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const CompraItem = conn.model('CompraItem')
 
         const inventario = await CompraItem
@@ -40,9 +40,8 @@ var controller = {
     },
     
     getInventarioBy: (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
-        const ubicacion = req.params.ubicacion;
+        const {user, ubicacion} = req.body
+        const conn = con(user)
         const CompraItem = conn.model('CompraItem')
         CompraItem.find({ubicacion: mongoose.Types.ObjectId(ubicacion), stock: { $gt: 0.3} })
             .populate('ubicacion')
@@ -135,18 +134,11 @@ var controller = {
     },
 
     getMovimientos: (req, res) => {
-        const bd = req.params.bd
-        const fecha = req.params.mes //cambiar por fecha
-        // const year = 2022
-        const conn = con(bd)
-        // let f1 = year + "-" + mes + "-01"
-        // console.log(f1)
-        // let f2 = year + "-" + mes + "-31"
-        // console.log(f2)
-
+        const {user, month} = req.body
+        const conn = con(user)        
         const Movimiento = conn.model('Movimiento')
 
-        const movimientos = Movimiento.find({fecha: fecha}).sort({'createdAt': -1})
+        const movimientos = Movimiento.find({fecha: month}).sort({'createdAt': -1})
             .then(movs=>{
                 return res.status(200).send({
                     status: "success",
@@ -180,14 +172,9 @@ var controller = {
     // },
 
     moveInventario: async (req, res) => {
-        const bd = req.params.bd
-        const params = req.body;
-        // const destinoId = params.destino._id
-        const compraId = params.itemsel.compra._id
-        // const productoId = params.itemsel.producto._id
-        // const cantidadm = parseInt(params.itemselcantidad)
-        // const empaquesm = parseInt(params.itemselempaques)
-        const conn = con(bd)
+        const {user, data} = req.body
+        const compraId = data.itemsel.compra._id
+        const conn = con(user)
         const CompraItem = conn.model('CompraItem')
         const Compra = conn.model('Compra')
         const Movimiento = conn.model('Movimiento')
@@ -197,19 +184,19 @@ var controller = {
         const movimiento = new Movimiento()
             movimiento.folio = numeroMovimientos + 1
             movimiento.status = "OK"
-            movimiento.fecha = params.fecha
-            movimiento.origen = params.origensel.ubicacion
-            movimiento.destino = params.destino
-            movimiento.item = params.itemsel
-            movimiento.cantidad = params.itemselcantidad
-            movimiento.empaques = params.itemselempaques
-            movimiento.clasificacion = params.clasificacion
-            movimiento.comentario = params.comentario
-            movimiento.pesadas = params.pesadas
-            movimiento.tara=params.tara
-            movimiento.ttara=params.ttara
-            movimiento.bruto=params.bruto
-            movimiento.neto=params.neto
+            movimiento.fecha = data.fecha
+            movimiento.origen = data.origensel.ubicacion
+            movimiento.destino = data.destino
+            movimiento.item = data.itemsel
+            movimiento.cantidad = data.itemselcantidad
+            movimiento.empaques = data.itemselempaques
+            movimiento.clasificacion = data.clasificacion
+            movimiento.comentario = data.comentario
+            movimiento.pesadas = data.pesadas
+            movimiento.tara=data.tara
+            movimiento.ttara=data.ttara
+            movimiento.bruto=data.bruto
+            movimiento.neto=data.neto
             movimiento.save((err, movimiento) => {
                 if(err){
                     return res.status(500).send({
@@ -218,7 +205,7 @@ var controller = {
                         err
                     })
                 }
-                CompraItem.findById(params.itemsel._id).exec((err, item) => {
+                CompraItem.findById(data.itemsel._id).exec((err, item) => {
                     if(err || !item){
                         return res.status(500).send({
                             status: 'error',
@@ -226,10 +213,10 @@ var controller = {
                             err
                         })
                     }
-                    item.cantidad -= params.itemselcantidad
-                    item.stock -= params.itemselcantidad
-                    item.empaques -= params.itemselempaques
-                    item.empaquesStock -= params.itemselempaques
+                    item.cantidad -= data.itemselcantidad
+                    item.stock -= data.itemselcantidad
+                    item.empaques -= data.itemselempaques
+                    item.empaquesStock -= data.itemselempaques
                     item.importe = item.cantidad * item.costo
                     item.save((err, itemsaved) => {
                         if(err){
@@ -239,14 +226,14 @@ var controller = {
                             })
                         }
                         const nitem = new CompraItem()
-                        nitem.ubicacion = params.destino._id
-                        nitem.compra = params.itemsel.compra._id
-                        nitem.producto = params.itemsel.producto._id
-                        nitem.cantidad = params.itemselcantidad
-                        nitem.clasificacion = params.clasificacion
-                        nitem.stock = params.itemselcantidad
-                        nitem.empaques = params.itemselempaques
-                        nitem.empaquesStock = params.itemselempaques
+                        nitem.ubicacion = data.destino._id
+                        nitem.compra = data.itemsel.compra._id
+                        nitem.producto = data.itemsel.producto._id
+                        nitem.cantidad = data.itemselcantidad
+                        nitem.clasificacion = data.clasificacion
+                        nitem.stock = data.itemselcantidad
+                        nitem.empaques = data.itemselempaques
+                        nitem.empaquesStock = data.itemselempaques
                         nitem.costo = itemsaved.costo
                         nitem.importe = nitem.cantidad * itemsaved.costo
                         nitem.save((err, nitemsaved) => {
@@ -286,10 +273,8 @@ var controller = {
     },
 
     deleteMovimiento: async (req, res)=>{
-        const bd = req.params.bd
-        const id = req.params.id
-        const movimiento = req.body
-        const conn = con(bd)
+        const {user, data} = req.body
+        const conn = con(user)
         const CompraItem = conn.model('CompraItem')
         const Compra = conn.model('Compra')
         const Movimiento = conn.model('Movimiento')
@@ -301,25 +286,19 @@ var controller = {
         cancelarmovimiento.status = "CANCELADO"
         cancelarmovimiento.fecha = new Date().toISOString().split('T')[0]
         //invertimos valores para regresar
-        cancelarmovimiento.destino = movimiento.origen
-        cancelarmovimiento.origen = movimiento.destino
+        cancelarmovimiento.destino = data.origen
+        cancelarmovimiento.origen = data.destino
 
-        cancelarmovimiento.item = movimiento.item
-        cancelarmovimiento.cantidad = movimiento.cantidad
-        cancelarmovimiento.empaques = movimiento.empaques
-        cancelarmovimiento.clasificacion = movimiento.clasificacion
-        cancelarmovimiento.comentario = "CANCELACION DE MOVIMIENTO FOLIO: "+movimiento.folio
-        cancelarmovimiento.pesadas = movimiento.pesadas
-        cancelarmovimiento.tara=movimiento.tara
-        cancelarmovimiento.ttara=movimiento.ttara
-        cancelarmovimiento.bruto=movimiento.bruto
-        cancelarmovimiento.neto=movimiento.neto
-
-
-
-
-
-
+        cancelarmovimiento.item = data.item
+        cancelarmovimiento.cantidad = data.cantidad
+        cancelarmovimiento.empaques = data.empaques
+        cancelarmovimiento.clasificacion = data.clasificacion
+        cancelarmovimiento.comentario = "CANCELACION DE MOVIMIENTO FOLIO: "+data.folio
+        cancelarmovimiento.pesadas = data.pesadas
+        cancelarmovimiento.tara=data.tara
+        cancelarmovimiento.ttara=data.ttara
+        cancelarmovimiento.bruto=data.bruto
+        cancelarmovimiento.neto=data.neto
 
         cancelarmovimiento.save((err, movcancelado) => {
             if(err){
@@ -329,7 +308,7 @@ var controller = {
                     err
                 })
             }
-            CompraItem.findById(movimiento.item._id).exec((err, item) => {
+            CompraItem.findById(data.item._id).exec((err, item) => {
                 if(err || !item){
                     return res.status(500).send({
                         status: 'error',
@@ -337,10 +316,10 @@ var controller = {
                         err
                     })
                 }
-                item.cantidad += movimiento.cantidad
-                item.stock += movimiento.cantidad
-                item.empaques += movimiento.empaques
-                item.empaquesStock += movimiento.empaques
+                item.cantidad += data.cantidad
+                item.stock += data.cantidad
+                item.empaques += data.empaques
+                item.empaquesStock += data.empaques
                 item.importe = item.cantidad * item.costo
                 item.save((err, itemsaved) => {
                     if(err){
@@ -350,14 +329,14 @@ var controller = {
                         })
                     }
                     const nitem = new CompraItem()
-                    nitem.ubicacion = movimiento.destino._id
-                    nitem.compra = movimiento.item.compra._id
-                    nitem.producto = movimiento.item.producto._id
-                    nitem.cantidad = movimiento.cantidad
-                    nitem.clasificacion = movimiento.clasificacion
-                    nitem.stock = movimiento.cantidad
-                    nitem.empaques = movimiento.empaques
-                    nitem.empaquesStock = movimiento.empaques
+                    nitem.ubicacion = data.destino._id
+                    nitem.compra = data.item.compra._id
+                    nitem.producto = data.item.producto._id
+                    nitem.cantidad = data.cantidad
+                    nitem.clasificacion = data.clasificacion
+                    nitem.stock = data.cantidad
+                    nitem.empaques = data.empaques
+                    nitem.empaquesStock = data.empaques
                     nitem.costo = itemsaved.costo
                     nitem.importe = nitem.cantidad * itemsaved.costo
                     nitem.save((err, nitemsaved) => {
@@ -380,7 +359,7 @@ var controller = {
                                         err
                                     })
                                 }
-                                Movimiento.findById({_id: movimiento._id}).exec((err, movupd)=>{
+                                Movimiento.findById({_id: data._id}).exec((err, movupd)=>{
                                     if(err)console.log(err)
                                     movupd.status = "CANCELADO"
                                     movupd.save( (err) =>{

@@ -11,7 +11,7 @@ module.exports = function conexionCliente(user) {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         connectTimeoutMS: 9000,
-        dbName: "DB_HADRIA2_"+user.db,
+        dbName: "HDR_USR_"+user.database,
     })
           conn.model('Balance', require('../schemas/balance'));
           conn.model('Cliente', require('../schemas/cliente'));
@@ -45,7 +45,7 @@ module.exports = function conexionCliente(user) {
           conn.model('Liquidacion', require('../schemas/liquidacion'));
           
           conn.on('connected', function(){
-            console.log("Conectado, Todo listo. ✅")
+            console.log("Conectado a la BD del usuario, Todo listo. ✅")
           })
           conn.on('disconnected', function(){
             mongoose.connection.close(() => {

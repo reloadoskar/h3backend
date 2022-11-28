@@ -61,8 +61,8 @@ var controller = {
     },
 
     getCuentas: async (req, res) => {
-        const bd= req.params.bd
-        const conn = con(bd)
+        const user= req.body
+        const conn = con(user)
         const Cliente = conn.model('Cliente')
         const resp = await Cliente
             .find({cuentas: {$ne: []}})
@@ -91,8 +91,8 @@ var controller = {
     },
 
     getCxcPdv: async (req, res) =>{
-        const bd= req.params.bd
-        const conn = con(bd)
+        const user= req.body
+        const conn = con(user)
         const Ingreso = conn.model('Ingreso')
         const resp = await Ingreso
             .find({saldo: {$gt: 0}})

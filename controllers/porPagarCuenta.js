@@ -1,8 +1,8 @@
 const con = require('../src/dbuser')
 
 exports.cxp_list = async (req, res) => {
-    const bd = req.params.bd
-    const conn = con(bd)
+    const user = req.body
+    const conn = con(user)
 
     const Egreso = conn.model('Egreso')
 
@@ -32,16 +32,15 @@ exports.cxp_list = async (req, res) => {
 }
 
 exports.cxp_create_pago = async (req, res) => {
-    let params = req.body
-    const bd = req.params.bd
-    const conn = con(bd)
+    let {user, data} = req.body
+    const conn = con(user)
 
     const Egreso = conn.model('Egreso')
     // const Provedor = conn.model('Provedor')
     const Compra = conn.model('Compra')
     
-    const cuentas = params.provedor.cuentas
-    let importe = params.importe
+    const cuentas = data.provedor.cuentas
+    let importe = data.importe
 
     console.log("Creando pago por: " + importe)
     console.log("Obteniendo la cuenta de egresos...")
@@ -61,8 +60,8 @@ exports.cxp_create_pago = async (req, res) => {
             console.log("Creando nuevo egreso...")
             const nuevoEgreso = await Egreso.create({
                 folio: siguienteFolio + i,
-                ubicacion: params.ubicacion,
-                fecha: params.fecha,
+                ubicacion: data.ubicacion,
+                fecha: data.fecha,
                 tipo: 'PAGO',
                 importe: importe,
                 saldo: 0,
@@ -107,8 +106,8 @@ exports.cxp_create_pago = async (req, res) => {
             console.log("Creando nuevo egreso...")
             const nuevoEgreso = await Egreso.create({
                 folio: siguienteFolio + i,
-                ubicacion: params.ubicacion,
-                fecha: params.fecha,
+                ubicacion: data.ubicacion,
+                fecha: data.fecha,
                 tipo: 'PAGO',
                 importe: importe,
                 saldo: 0,
@@ -159,11 +158,10 @@ exports.cxp_create_pago = async (req, res) => {
 }
 
 exports.cxp_update_saldo = (req, res) => {
-    const params = req.body
-    const bd = req.params.bd
-    const conn = con(bd)
-    const compras = params.compras
-    const importe = params.importe
+    const {user, data} = req.body
+    const conn = con(user)
+    const compras = data.compras
+    const importe = data.importe
     const Egreso = conn.model('Egreso')
     let saldoCompra = 0
     compras.map(compra => {

@@ -3,18 +3,17 @@ const con = require('../src/dbuser')
 const controller = {
     save: (req, res) => {
         //recoger parametros
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        const conn = con(user)
         const Ingreso = conn.model('Ingreso')
         let ingreso = new Ingreso()
 
-        ingreso.ubicacion = params.ubicacion
-        ingreso.concepto = params.concepto
-        ingreso.descripcion = params.descripcion
-        ingreso.fecha = params.fecha
-        ingreso.tipoPago = params.tipoPago
-        ingreso.importe = params.importe
+        ingreso.ubicacion = data.ubicacion
+        ingreso.concepto = data.concepto
+        ingreso.descripcion = data.descripcion
+        ingreso.fecha = data.fecha
+        ingreso.tipoPago = data.tipoPago
+        ingreso.importe = data.importe
 
         if (ingreso.concepto === "PRESTAMO") {
             Compra.estimatedDocumentCount((err, count) => {
@@ -22,12 +21,12 @@ const controller = {
                 var compra = new Compra()
                 compra._id = mongoose.Types.ObjectId(),
                     compra.folio = nDocuments + 1
-                compra.provedor = params.provedor
-                compra.ubicacion = params.ubicacion
+                compra.provedor = data.provedor
+                compra.ubicacion = data.ubicacion
                 compra.tipoCompra = "PRESTAMO"
-                compra.importe = params.importe
-                compra.saldo = params.importe
-                compra.fecha = params.fecha
+                compra.importe = data.importe
+                compra.saldo = data.importe
+                compra.fecha = data.fecha
                 compra.status = 'ACTIVO'
                 compra.save()
             })
@@ -51,8 +50,8 @@ const controller = {
     },
 
     getIngresos: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const Ingreso = conn.model('Ingreso')
         const resp = await Ingreso
             .find({ importe: { $gt: 0 } }).sort({ fecha: -1, createdAt: -1 })
@@ -75,9 +74,8 @@ const controller = {
     },
 
     getIngreso: async (req, res) => {
-        const ingresoId = req.params.id;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, id} = req.body
+        const conn = con(user)
         const Ingreso = conn.model('Ingreso')
         if (!ingresoId) {
             return res.status(404).send({
@@ -107,8 +105,8 @@ const controller = {
     },
 
     getCuentasdelosClientes: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd) 
+        const user = req.body
+        const conn = con(user) 
         const Ingreso = conn.model('Ingreso') 
 
         const resp = await Ingreso
@@ -144,13 +142,12 @@ const controller = {
     },
 
     update: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
-        const params = req.body;
+        const conn = con(user)
+        const {user, data} = req.body;
         const Ingreso = conn.model('Ingreso')
 
         const resp = await Ingreso
-            .findOneAndUpdate({ _id: params._id }, params, { new: true })
+            .findOneAndUpdate({ _id: data._id }, data, { new: true })
             .then(ingresoUpdated => {
                 conn.close()
                 return res.status(200).send({
@@ -170,12 +167,11 @@ const controller = {
     },
 
     delete: async (req, res) => {
-        const ingresoId = req.params.id;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, id} = req.body
+        const conn = con(user)
         const Ingreso = conn.model('Ingreso')
         const ingreso = await Ingreso
-            .findById(ingresoId)
+            .findById(id)
             .catch(err => {
                 conn.close()
                 return res.status(500).send({
@@ -196,7 +192,7 @@ const controller = {
             })
 
         const removeIngreso = await Ingreso
-            .findOneAndDelete({ _id: ingresoId })
+            .findOneAndDelete({ _id: id })
             .then(ingresoRemoved => {
                 conn.close()
                 return res.status(200).send({
@@ -216,10 +212,8 @@ const controller = {
     },
 
     getIngresosMonthYear: (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
-        const year = req.params.year
-        let month = req.params.month
+        const {user, month, year} = req.body
+        const conn = con(user)
 
         const Ingreso = conn.model('Ingreso')
 
@@ -245,11 +239,11 @@ const controller = {
             })
     },
 
-
     getIngresosDelDia: (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
-        const fecha = req.params.fecha
+        const {user, fecha} = req.body
+        const conn = con(user)
+        console.log(fecha)
+        console.log(user)
 
         const Ingreso = conn.model('Ingreso')
         try {

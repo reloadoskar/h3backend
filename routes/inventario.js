@@ -6,11 +6,11 @@ var Inventario = require('../controllers/inventario');
 var router = express.Router();
 
 //Rutas
-router.get('/:bd/inventario', Inventario.getInventario);
-router.post('/:bd/inventario/movimiento', Inventario.moveInventario);
-router.get('/:bd/inventario/movimientos/:mes', Inventario.getMovimientos);
-router.get('/:bd/inventario/:ubicacion', Inventario.getInventarioBy);
-router.get('/:bd/inventarioxubicacion/', Inventario.getInventarioUbicacion);
-router.delete('/:bd/inventario/delete/movimiento/', Inventario.deleteMovimiento);
+router.post('/inventario', Inventario.getInventario);
+router.post('/inventario/movimiento', Inventario.moveInventario);
+router.post('/inventario/movimientos', Inventario.getMovimientos);
+router.post('/inventario/:ubicacion', Inventario.getInventarioBy);
+router.post('/inventarioxubicacion/', Inventario.getInventarioUbicacion);
+router.post('/inventario/delete/movimiento/', Inventario.deleteMovimiento);
 
 module.exports = router;

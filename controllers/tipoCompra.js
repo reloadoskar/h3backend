@@ -4,16 +4,15 @@ const con = require('../src/dbuser')
 const controller = {
     save: (req, res) => {
         //recoger parametros
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body;
+        const conn = con(user)
         const TipoCompra = conn.model('TipoCompra')
         
         //Crear el objeto a guardar
         let tipocompra = new TipoCompra();
             
         //Asignar valores
-        tipocompra.tipo = params.tipo;
+        tipocompra.tipo = data.tipo;
 
         //Guardar objeto
         tipocompra.save((err, tipocompraStored) => {
@@ -21,7 +20,7 @@ const controller = {
                 if(err || !tipocompraStored){
                     return res.status(404).send({
                         status: 'error',
-                        message: 'El tipocompra no se guardó'
+                        message: 'El tipocompra no se guardó' + err.message
                     })
                 }
                 //Devolver respuesta
@@ -34,8 +33,8 @@ const controller = {
     },
 
     getTipoCompras: (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         const TipoCompra = conn.model('TipoCompra')
         TipoCompra.find({}).sort('_id').exec( (err, tipocompras) => {
             conn.close()
