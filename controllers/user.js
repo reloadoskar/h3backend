@@ -302,8 +302,9 @@ const controller = {
         }
 
         const Empleado = newConn.model('Empleado', require('../schemas/empleado'))
+        const Ubicacion = newConn.model('Ubicacion', require('../schemas/ubicacion'))
         console.log("=> Recopilando datos del usuario en su database...")
-        const empleado = await Empleado.findById(existingUser._id)
+        const empleado = await Empleado.findById(existingUser._id).populate("ubicacion")
         if(!empleado){
         errorStatusCode = 401
         throw new Error('No se encontro el No. de empleado.')
