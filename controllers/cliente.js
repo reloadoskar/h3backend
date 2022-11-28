@@ -105,7 +105,7 @@ const controller = {
         const conn = con(user)
         const Cliente = conn.model('Cliente')
             // Find and update
-            console.log(data)
+            // console.log(data)
         Cliente
             .findOneAndUpdate({_id: data._id}, data, { new: true } )
             .then( updatd => {

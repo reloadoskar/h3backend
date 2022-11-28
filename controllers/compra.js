@@ -291,16 +291,15 @@ var controller = {
     },
 
     getCompra: async (req, res) => {
-        const compraId = req.params.id;
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, id} = req.body
+        const conn = con(user)
         const Compra = conn.model('Compra')
         const VentaItem = conn.model('VentaItem')
         const Egreso = conn.model('Egreso')
         let data = {}
 
         const compra = await Compra
-            .findById(compraId)
+            .findById(id)
             .populate('provedor', 'clave nombre tel1 cta1 email diasDeCredito comision')
             .populate('gastos')
             .populate('ubicacion')
@@ -425,12 +424,12 @@ var controller = {
     },
 
     update: async (req, res) => {
-        const compra = req.body
-        const bd = req.params.bd
-        const conn = con(bd)
+        const {user, data} = req.body
+        const conn = con(user)
+        console.log(data)
         const Compra = conn.model('Compra')
-        const resp = await Compra
-            .findByIdAndUpdate(compra._id, compra, { new: true }, (err, compraUpdated) => {
+        Compra
+            .findOneAndUpdate({"_id": data._id}, data, { new: true }, (err, compraUpdated) => {
                 conn.close()
                 if (err) {
                     return res.status(500).send({
@@ -586,13 +585,11 @@ var controller = {
     },
 
     updateCompraItem: (req, res) => {
-        const item = req.body;
-        const bd = req.params.bd
-        const conn = con(bd)
-
+        const {user, data} = req.body;
+        const conn = con(user)
         const CompraItem = conn.model('CompraItem')
 
-        CompraItem.findById(item.item_id).exec((err, compraItem) => {
+        CompraItem.findById(data.item_id).exec((err, compraItem) => {
             if (err || !compraItem) {
                 conn.close()
                 return res.status(200).send({
@@ -600,12 +597,12 @@ var controller = {
                     message: 'Ocurrio un error.'
                 })
             } else {
-                let cantDiff = compraItem.cantidad - item.cantidad
-                let empDiff = compraItem.empaques - item.empaques
-                compraItem.cantidad = item.cantidad
-                compraItem.empaques = item.empaques
-                compraItem.costo = item.costo
-                compraItem.importe = item.importe
+                let cantDiff = compraItem.cantidad - data.cantidad
+                let empDiff = compraItem.empaques - data.empaques
+                compraItem.cantidad = data.cantidad
+                compraItem.empaques = data.empaques
+                compraItem.costo = data.costo
+                compraItem.importe = data.importe
                 compraItem.stock -= cantDiff
                 compraItem.empaquesStock -= empDiff
                 compraItem.save((err, compraItemSaved) => {
