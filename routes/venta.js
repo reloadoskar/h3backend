@@ -12,7 +12,7 @@ router.post('/ventas/mes/:mes', VentaController.getVentaItems);
 router.post('/ventas/:ubicacion/:fecha', VentaController.getResumenVentas)
 router.post('/venta/producto/:id', VentaController.getVentasOfProduct);
 router.post('/venta', VentaController.getVenta);
-router.post('/venta/:id', VentaController.cancel);
+router.post('/venta/delete', VentaController.cancel);
 router.post('/ventas/semana', VentaController.getVentasSemana);
 
 module.exports = router;
