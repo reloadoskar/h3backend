@@ -54,15 +54,15 @@ var controller = {
                 let creditoDisponible = cliente.credito_disponible
                 let creditoActualizado = creditoDisponible - ingreso.saldo
                 cliente.credito_disponible = creditoActualizado
+                console.log("ah siii.. Actualizando cliente...")
+                let clienteUpdated = await cliente.save()
+                if(!clienteUpdated){
+                    errorStatusCode=401
+                    throw new Error("No se actualizo el cliente.")
+                }
             } else {
                 venta.acuenta = data.acuenta
                 ingreso.importe = data.total
-            }
-            console.log("ah siii.. Actualizando cliente...")
-            let clienteUpdated = await cliente.save()
-            if(!clienteUpdated){
-                errorStatusCode=401
-                throw new Error("No se actualizo el cliente.")
             }
             
             console.log("... Guardando Ingreso...")
@@ -88,33 +88,82 @@ var controller = {
             console.log("... Creando items...")
             let items = []
             data.items.forEach(item => {                    
-                    var ventaItem = new VentaItem()
-                        ventaItem.venta = venta._id
-                        ventaItem.ventaFolio = venta.folio 
-                        ventaItem.ubicacion = venta.ubicacion
-                        ventaItem.fecha = venta.fecha
-                        ventaItem.compra = item.compra
-                        ventaItem.compraItem = item.itemOrigen
-                        ventaItem.producto = item.producto._id
-                        ventaItem.cantidad = item.cantidad
-                        ventaItem.empaques = item.empaques
-                        ventaItem.precio = item.precio
-                        ventaItem.importe = item.importe
-                        ventaItem.pesadas = item.pesadas
-                        ventaItem.tara = item.tara
-                        ventaItem.ttara = item.ttara
-                        ventaItem.bruto = item.bruto
-                        ventaItem.neto = item.neto
+                var ventaItem = new VentaItem()
+                    ventaItem.venta = venta._id
+                    ventaItem.ventaFolio = venta.folio 
+                    ventaItem.ubicacion = venta.ubicacion
+                    ventaItem.fecha = venta.fecha
+                    ventaItem.compra = item.compra
+                    ventaItem.compraItem = item.itemOrigen
+                    ventaItem.producto = item.producto._id
+                    ventaItem.cantidad = item.cantidad
+                    ventaItem.empaques = item.empaques
+                    ventaItem.precio = item.precio
+                    ventaItem.importe = item.importe
+                    ventaItem.pesadas = item.pesadas
+                    ventaItem.tara = item.tara
+                    ventaItem.ttara = item.ttara
+                    ventaItem.bruto = item.bruto
+                    ventaItem.neto = item.neto
 
-                        venta.items.push(ventaItem._id)
-                        items.push(ventaItem)                        
+                    venta.items.push(ventaItem._id)
+                    items.push(ventaItem)    
+
+                    CompraItem.updateOne( 
+                        {_id: item.itemOrigen },
+                        {"$inc": { "stock":  -item.cantidad, "empaquesStock": -item.empaques }} 
+                    ).catch(err=>{
+                        console.log(err.message,'error')
                     })
+
+                    Compra.updateOne(
+                        {_id: item.compra},
+                        {"$push": { ventaItems: ventaItem._id}}
+                    ).catch(err=>{
+                        console.log(err.message,'error')
+                    })
+
+            })
             console.log("... Guardando ventaItems...")
             let ventaItemsSaved = await VentaItem.insertMany(items)
             if(!ventaItemsSaved){
                 errorStatusCode=401
                 throw new Error("No se guardaron los items de venta")
             }
+            
+            console.log("... Guardando venta...")
+            let ventaSvd = await venta.save()
+            if(!ventaSvd){
+                errorStatusCode=401
+                throw new Error("No se guardo la pnchx venta!! 😡😡")
+            }
+
+            let vntaPpltd = await Venta.findById(ventaSvd._id)
+            .populate('ubicacion')
+            .populate('cliente')
+            .populate({
+                path: 'items',
+                populate: { path: 'producto'},
+            })
+            .populate({
+                path: 'items',
+                populate: { path: 'compra'},
+            })
+            .populate({
+                path: 'pagos',
+                populate: { path: 'ubicacion'},
+            })
+            if(!vntaPpltd){
+                errorStatusCode=401
+                throw new Error("No se guardo la venta")
+            }
+            console.log("Todo cool, chau chau.. 🖖")
+            conn.close()
+            return res.status(200).send({
+                status: "success",
+                message: "Venta guardada correctamente.",
+                venta: vntaPpltd
+            })
 
 
         } catch (error) {
@@ -126,20 +175,9 @@ var controller = {
 
 
 
-        //             CompraItem.updateOne({_id: item.itemOrigen },
-        //                 {"$inc": { "stock":  -item.cantidad, "empaquesStock": -item.empaques }},
-        //                 (err, doc) => {
-        //                     if(err)console.log(err)
-        //                 }
-        //             )
+        //             
 
-        //             Compra.updateOne(
-        //                 {_id: item.compra},
-        //                 {"$push": { ventaItems: ventaItem._id}},
-        //                 (err, doc) => {
-        //                     if(err)console.log(err)
-        //                 }
-        //             )
+        //             
         //     })
 
         //     venta.save((err, ventaSaved) => {
