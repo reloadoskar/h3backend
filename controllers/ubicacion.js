@@ -2,10 +2,10 @@
 const con = require('../src/dbuser')
 
 const controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         //recoger parametros
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Ubicacion = conn.model('Ubicacion')
 
             //Crear el objeto a guardar
@@ -33,9 +33,9 @@ const controller = {
 
     },
 
-    getUbicacions: (req, res) => {
+    getUbicacions: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Ubicacion = conn.model('Ubicacion')
         Ubicacion.find({}).sort('tipo').exec( (err, ubicacions) => {
             conn.close()
@@ -53,14 +53,14 @@ const controller = {
         })
     },
 
-    getUbicacionsSaldo: (req, res) => {
+    getUbicacionsSaldo: async (req, res) => {
 
     },
 
-    getUbicacion: (req, res) => {
+    getUbicacion: async (req, res) => {
         const ubicacionId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Ubicacion = conn.model('Ubicacion')
 
         Ubicacion.findById(ubicacionId, (err, ubicacion) => {
@@ -78,9 +78,9 @@ const controller = {
         })
     },
 
-    update: (req, res) => {
+    update: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Ubicacion = conn.model('Ubicacion')
     
         Ubicacion.findOneAndUpdate({_id: data._id}, data, {new:true}, (err, ubicacionUpdated) => {
@@ -105,10 +105,10 @@ const controller = {
         })
     },
 
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const ubicacionId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Ubicacion = conn.model('Ubicacion')
         const Compra = conn.model('Compra')
 

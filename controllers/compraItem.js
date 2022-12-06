@@ -2,16 +2,16 @@ const mongoose = require('mongoose');
 const con = require('../src/dbuser')
 const controller = {
 
-    save: (req, res) => {
+    save: async (req, res) => {
         //recoger parametros
         const params = req.body;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
     },
 
     getItems: async (req, res) => {
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
 
         const CompraItem = conn.model('CompraItem')
         const resp = await CompraItem
@@ -35,10 +35,10 @@ const controller = {
             })
     },
 
-    subtractStock: (req, res) => {
+    subtractStock: async (req, res) => {
         const bd = req.params.bd
         const params = req.body
-        const conn = con(bd)
+        const conn = await con(bd)
         const CompraItem = conn.model('CompraItem')
         CompraItem.findById(params.id).exec((err, item) => {
             if(err||!item){
@@ -58,10 +58,10 @@ const controller = {
         })
     },
 
-    addStock: (req, res) => {
+    addStock: async (req, res) => {
         const bd = req.params.bd
         const params = req.body
-        const conn = con(bd)
+        const conn = await con(bd)
         const CompraItem = conn.model('CompraItem')
         CompraItem.findById(params.id).exec((err, item) => {
             if(err||!item){

@@ -2,9 +2,9 @@
 const con = require('../src/dbuser')
 
 const controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         const {user, data} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Unidad = conn.model('Unidad')
 
         //Crear el objeto a guardar
@@ -33,9 +33,9 @@ const controller = {
 
     },
 
-    getUnidades: (req, res) => {
+    getUnidades: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Unidad = conn.model('Unidad')
         Unidad.find({}).sort('_id').exec( (err, unidads) => {
             conn.close()
@@ -52,10 +52,10 @@ const controller = {
         })
     },
 
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const {user, id} = req.body
         const unidadId = id;
-        const conn = con(user)
+        const conn = await con(user)
         const Unidad = conn.model('Unidad')
 
         Unidad.findOneAndDelete({_id: unidadId}, (err, unidadRemoved) => {

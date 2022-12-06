@@ -2,9 +2,9 @@
 const con = require('../src/dbuser')
 
 const controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Concepto = conn.model('Concepto')
         //recoger parametros
 
@@ -36,7 +36,7 @@ const controller = {
 
     getConceptos: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Concepto = conn.model('Concepto')
         const resp = await Concepto
             .find({})
@@ -58,9 +58,9 @@ const controller = {
             })
     },
 
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const {user, id} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Concepto = conn.model('Concepto')
 
         Concepto.findOneAndDelete({_id: id}, (err, conceptoRemoved) => {

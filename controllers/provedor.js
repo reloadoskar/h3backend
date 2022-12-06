@@ -2,10 +2,10 @@
 const con = require('../src/dbuser')
 
 const controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         //recoger parametros
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Provedor = conn.model('Provedor')
         
         let provedor = new Provedor();
@@ -42,7 +42,7 @@ const controller = {
 
     getProvedors: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Provedor = conn.model('Provedor')
         const resp = await Provedor
             .find({})
@@ -68,7 +68,7 @@ const controller = {
     getProvedor: async (req, res) => {
         const provedorId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Provedor = conn.model('Provedor')
         if(!provedorId){
             conn.close()
@@ -98,9 +98,9 @@ const controller = {
            })
     },
 
-    update: (req, res) => {
+    update: async (req, res) => {
         const {user, data} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Provedor = conn.model('Provedor')
         Provedor.findOneAndUpdate({_id: data._id}, data, {new:true}, (err, provedorUpdated) => {
             conn.close()
@@ -123,9 +123,9 @@ const controller = {
         })
     },
 
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const {user, id} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Provedor = conn.model('Provedor')
         Provedor.findOneAndDelete({_id: id}, (err, provedorRemoved) => {
             conn.close()

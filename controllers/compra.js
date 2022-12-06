@@ -4,9 +4,9 @@ const mongoose = require('mongoose');
 const con = require('../src/dbuser')
 
 var controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Compra = conn.model('Compra')
         const CompraItem = conn.model('CompraItem')
         const Egreso = conn.model('Egreso')
@@ -140,7 +140,7 @@ var controller = {
 
     getComprasActivas: async (req, res) => {
         const bd = req.params.bd
-        const conexion = con(bd)
+        const conexion = await con(bd)
         try {
             const Compra = conexion.model('Compra')
             const resp = await Compra
@@ -177,7 +177,7 @@ var controller = {
         // if (mes < 10) {
         //     mes = "0" + mes
         // }
-        const conn = con(user)
+        const conn = await con(user)
         const Compra = conn.model('Compra')
         const Liquidacion = conn.model('Liquidacion')
         const compra = await Compra
@@ -252,14 +252,11 @@ var controller = {
     },
 
     getComprasProvedor: async (req, res) => {
-        const bd = req.params.bd
-        let mes = req.params.month
-        let year = req.params.year
-        console.log(bd)
+        const {user, mes, year} = req.body        
         if (mes < 10) {
             mes = "0" + mes
         }
-        const conn = con(bd)
+        const conn = await con(user)
         const Compra = conn.model('Compra')
 
         const resp = await Compra.aggregate([
@@ -292,7 +289,7 @@ var controller = {
 
     getCompra: async (req, res) => {
         const {user, id} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Compra = conn.model('Compra')
         const VentaItem = conn.model('VentaItem')
         const Egreso = conn.model('Egreso')
@@ -378,7 +375,7 @@ var controller = {
     open: async (req, res) => {
         const compraId = req.params.id
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Compra = conn.model('Compra')
         const resp = await Compra
             .findOneAndUpdate({ _id: compraId }, { status: "ACTIVO" })
@@ -402,7 +399,7 @@ var controller = {
     close: async (req, res) => {
         const compraId = req.params.id
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Compra = conn.model('Compra')
         const resp = await Compra
             .findOneAndUpdate({ _id: compraId }, { status: "CERRADO" })
@@ -425,7 +422,7 @@ var controller = {
 
     update: async (req, res) => {
         const {user, data} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         console.log(data)
         const Compra = conn.model('Compra')
         Compra
@@ -454,7 +451,7 @@ var controller = {
     delete: async (req, res) => {
         const compraId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Compra = conn.model('Compra')
         const CompraItem = conn.model('CompraItem')
         const VentaItem = conn.model('VentaItem')
@@ -501,10 +498,10 @@ var controller = {
 
     },
 
-    cancel: (req, res) => {
+    cancel: async (req, res) => {
         const compraId = req.params.id
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Compra = conn.model('Compra')
         const CompraItem = conn.model('CompraItem')
         Compra.findById(compraId).exec((err, compra) => {
@@ -532,9 +529,9 @@ var controller = {
         })
     },
 
-    addCompraItem: (req, res) => {
+    addCompraItem: async (req, res) => {
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Compra = conn.model('Compra')
         const CompraItem = conn.model('CompraItem')
         let item = req.body
@@ -584,9 +581,9 @@ var controller = {
 
     },
 
-    updateCompraItem: (req, res) => {
+    updateCompraItem: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const CompraItem = conn.model('CompraItem')
 
         CompraItem.findById(data.item_id).exec((err, compraItem) => {
@@ -627,7 +624,7 @@ var controller = {
     recuperarVentas: async (req, res) => {
         const id = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const VentaItem = conn.model('VentaItem')
         const Compra = conn.model('Compra')
 
@@ -653,7 +650,7 @@ var controller = {
     recupearGastos: async (req, res) => {
         const id = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Compra = conn.model('Compra')
         const Egreso = conn.model('Egreso')
 

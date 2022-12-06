@@ -9,7 +9,7 @@ var controller = {
         let errorStatusCode = 500
         try {
             console.log("conectando...")
-            const conn = con(user)
+            const conn = await con(user)
             if (!conn) {
                 console.error("No se pudo conectar")
                 errorStatusCode = 401
@@ -176,7 +176,7 @@ var controller = {
     
     getVentas: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         var VentaItem = conn.model('VentaItem')
         let ventas = await VentaItem.find({})
             // .populate('compras')
@@ -190,9 +190,9 @@ var controller = {
             })
     },
 
-    getVenta: (req, res) => {
+    getVenta: async (req, res) => {
         const { user, folio } = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Venta = conn.model('Venta')
         Venta.findOne({ "folio": folio })
             // .populate({
@@ -240,9 +240,9 @@ var controller = {
             })
     },
 
-    getVentasOfProduct: (req, res) => {
+    getVentasOfProduct: async (req, res) => {
         const { user, id } = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Venta = conn.model('Venta')
         Venta.aggregate()
             .project({ "items": 1, fecha: 1, cliente: 1, tipoPago: 1, })
@@ -260,7 +260,7 @@ var controller = {
 
     getResumenVentas: async (req, res) => {
         const { user, ubicacion, fecha } = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const VentaItem = conn.model('VentaItem')
         try {
             const response = await VentaItem
@@ -296,7 +296,7 @@ var controller = {
 
     getVentasSemana: async (req, res) => {
         const { user, f1, f2 } = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const VentaItem = conn.model('VentaItem')
 
         let ventas = await VentaItem.find({ fecha: { $gte: f1, $lte: f2 } })
@@ -315,7 +315,7 @@ var controller = {
 
     getVentaItems: async (req, res) => {
         const { user, mes } = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const VentaItem = conn.model('VentaItem')
         const Items = await VentaItem.find({
             fecha: { $gt: "2021-" + mes + "-00", $lt: "2021-" + mes + "-32" }
@@ -339,9 +339,9 @@ var controller = {
             })
     },
 
-    update: (req, res) => {
+    update: async (req, res) => {
         const { user, data } = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Venta = conn.model('Venta')
         //recoger datos actualizados y validarlos
 
@@ -370,7 +370,7 @@ var controller = {
 
     cancel: async (req, res) => {
         const { user, id } = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Venta = conn.model('Venta')
         const VentaItem = conn.model('VentaItem')
         const CompraItem = conn.model('CompraItem')
@@ -417,7 +417,7 @@ var controller = {
             mensajes: mensajes,
             venta: laventa
         })
-    },
+    }
 }
 
 module.exports = controller;

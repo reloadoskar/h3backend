@@ -5,7 +5,7 @@ const controller = {
         const {user, data} = req.body;
         let errorStatusCode = 500;
         try {
-            const conn = con(user)
+            const conn = await con(user)
             const Empresa = conn.model('Empresa')
     
             let nEmpresa = Empresa.create(data)
@@ -31,9 +31,10 @@ const controller = {
 
 
     },
+    
     get: async (req, res) => {
         const user = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Empresa = conn.model('Empresa')
 
         const resp = await Empresa
@@ -68,9 +69,10 @@ const controller = {
                 })
             })
     },
+
     update: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Empresa = conn.model('Empresa')
         console.log(data)
         const resp = await Empresa

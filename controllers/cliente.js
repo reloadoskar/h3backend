@@ -2,107 +2,106 @@
 const con = require('../src/dbuser')
 
 const controller = {
-    save: (req, res) => {
-        //recoger parametros
+    save: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
-        const Cliente = conn.model('Cliente')
-
-        //Crear el objeto a guardar
-        let cliente = new Cliente();
-
-        //Asignar valores
-        cliente.nombre = data.nombre;
-        cliente.direccion = data.direccion;
-        cliente.ubicacion = data.ubicacion;
-        cliente.rfc = data.rfc;
-        cliente.tel1 = data.tel1;
-        cliente.email = data.email;
-        cliente.limite_de_credito = data.limite_de_credito;
-        cliente.credito_disponible = data.limite_de_credito;
-        cliente.dias_de_credito = data.dias_de_credito;
-
-        //Guardar objeto
-        cliente.save((err, clienteStored) => {
-            conn.close()
-            if (err || !clienteStored) {
-                return res.status(404).send({
-                    status: 'error',
-                    message: 'El cliente no se guardó',
-                    err: err
-                })
+        let errorStatusCode=500
+        console.log("H3S> Holi, voy a guardar un cliente, comper'...")
+        try {
+            const conn = await con(user)
+            if(!conn){
+                errorStatusCode=401
+                conn.close()
+                throw new Error("Ash!! No me pudo conectar. 💀")
             }
-            //Devolver respuesta
+            const Cliente = conn.model('Cliente')
+            console.log("H3S> Creando cliente...")
+            let nuevoCliente = await Cliente.create(data)
+            if(!nuevoCliente){
+                errorStatusCode=401
+                conn.close()
+                throw new Error('NOUP!, no se guardo el cliente. 💀🤔')
+            }
+            console.log("H3S> Yastuvooo 🤖")
+            conn.close()
             return res.status(200).send({
                 status: 'success',
                 message: 'Cliente guardado correctamente.',
-                cliente: clienteStored
+                cliente: nuevoCliente            })
+            
+        } catch (error) {
+            console.log("H3S> Cómo de que no puedo hacerlo ahora?!! ❌")
+            return res.status(errorStatusCode).send({
+                status: 'error',
+                message: 'El cliente no se guardó: '+error.message,
             })
-        })
-
+        }
     },
 
     getClientes: async (req, res) => {
         const user = req.body
-        const conn = con(user)
-        const Cliente = conn.model('Cliente')
-        
-        const resp = await Cliente.find({})
-            .sort('createdAt')
-            .lean()
-            .then((clientes) => {
-                conn.close()
-                return res.status(200).send({
-                    status: 'success',
-                    message: 'Ok',
-                    clientes
-                })
+        let errorStatusCode=500
+        try {
+            const conn = await con(user)
+            if(!conn){
+                errorStatusCode=401
+                throw new Error("No hay conectividad broww!!")
+            }
+            const Cliente = conn.model('Cliente')
+            const clientes = await Cliente.find({})
+                .sort('createdAt')
+
+            if(!clientes){
+                errorStatusCode=401
+                throw new Error("No se hallaron los clientes.")
+            }
+
+            conn.close()
+            return res.status(200).send({
+                status: 'success',
+                message: 'Ok',
+                clientes
             })
-            .catch(err => {
-                conn.close()
-                return res.status(500).send({
-                    status: 'error',
-                    message: 'Error al devolver los clientes',
-                    err
-                })
+            
+        } catch (error) {
+            return res.status(errorStatusCode).send({
+                status: 'error',
+                message: 'Error al devolver los clientes',
             })
+        }
     },
 
     getCliente: async (req, res) => {
-        const clienteId = req.params.id;
-        const bd = req.params.bd
-        const conn = con(bd)
-        const Cliente = conn.model('Cliente')
-        if (!clienteId) {
-            return res.status(404).send({
+        const {user, id} = req.body
+        let errorStatusCode = 500 
+        try {
+            const conn = await con(user)
+            if(!conn){
+                errorStatusCode=401
+                throw new Error("No conecting..")
+            }
+            const Cliente = conn.model('Cliente')
+            const cliente = await Cliente.findById(id)
+            if(!cliente){
+                errorStatusCode=401
+                throw new Error("No se encontro el cliente")
+            }
+            conn.close()
+            return res.status(200).send({
+                status: 'success',
+                cliente
+            })
+        } catch (error) {
+            return res.status(errorStatusCode).send({
                 status: 'error',
-                message: 'No existe el cliente'
+                message: 'No existe el cliente.'
             })
         }
-        
-        const resp = await Cliente.findById(clienteId)
-            .lean()
-            .then(cliente => {
-                conn.close()
-                return res.status(200).send({
-                    status: 'success',
-                    cliente
-                })
-            })
-            .catch(err => { 
-                conn.close()               
-                if (err || !cliente) {
-                    return res.status(404).send({
-                        status: 'success',
-                        message: 'No existe el cliente.'
-                    })
-                }
-            }) 
+                
     },
 
     update: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Cliente = conn.model('Cliente')
             // Find and update
             // console.log(data)
@@ -128,7 +127,7 @@ const controller = {
 
     delete: async (req, res) => {
         const {user, id} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Cliente = conn.model('Cliente')
         Cliente.findOneAndDelete({ _id: id }, (err, clienteRemoved) => {
                 if (!clienteRemoved) {

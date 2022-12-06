@@ -1,18 +1,14 @@
 const mongoose = require('mongoose');
-
-
 const mongoUri = process.env.APP_MONGODB_URI
-
-module.exports = function conexionCliente(user) {
-    
-    console.log("Conectando usuario: "+user.nombre);
+module.exports = async function conexionCliente(user) {
+    console.log("DB> Hola: "+user.nombre);
 
     const conn = mongoose.createConnection(mongoUri, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        connectTimeoutMS: 9000,
-        dbName: "HDR_USR_"+user.database,
-    })
+              useNewUrlParser: true,
+              useUnifiedTopology: true,
+              connectTimeoutMS: 9000,
+              dbName: "HDR_USR_"+user.database,
+          })
           conn.model('Balance', require('../schemas/balance'));
           conn.model('Cliente', require('../schemas/cliente'));
           conn.model('CompraItem', require('../schemas/compra_item'));
@@ -45,15 +41,16 @@ module.exports = function conexionCliente(user) {
           conn.model('Liquidacion', require('../schemas/liquidacion'));
           
           conn.on('connected', function(){
-            console.log("Conectado a la BD del usuario, Todo listo. ✅")
+            console.log("BD> Bienvenido. ✅")
           })
           conn.on('disconnected', function(){
             mongoose.connection.close(() => {
-              console.log("Desconectado.");
+              console.log("BD> Hasta luego "+ user.nombre +" 🤖🖖");
             })
           })
           conn.on('error', function(err){
-            console.log(err)
+            console.log("BD> ERROR!!! " + err.message)
+            // mongoose.disconnect()
           })
     return conn; 
 }

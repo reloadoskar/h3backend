@@ -3,7 +3,7 @@ const con = require('../src/dbuser')
 const controller = {    
     save: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Empaque = conn.model('Empaque')
 
         const resp = await Empaque
@@ -28,7 +28,7 @@ const controller = {
 
     getEmpaques: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Empaque = conn.model('Empaque')
         const resp = await Empaque.find({})
             .sort('_id')
@@ -52,7 +52,7 @@ const controller = {
 
     delete: async (req, res) => {
         const {user, id} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Empaque = conn.model('Empaque')
 
         const resp = await Empaque

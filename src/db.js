@@ -11,7 +11,7 @@ module.exports = function conexionLobby(){
   });
   conn.model('User', require('../schemas/user'))
   conn.once("open", function() {
-      console.log("CONECTADO A LA BD HADRIA3");
+      console.log("CONECTADO CON LA BD 🖖🤖");
   });
   conn.on('error',(err) =>{
     conn.close()
@@ -19,11 +19,11 @@ module.exports = function conexionLobby(){
   })
   conn.on('close', () => {
     conn.close()
-    console.log("Hasta luego")
+    console.log("BD CLOSED!! 👾")
   })
   conn.on('disconnect', () => {
     conn.close()
-    console.log('Desconectado')
+    console.log('BD OUT!! 👾')
   })
   return conn
 }

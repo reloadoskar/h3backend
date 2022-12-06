@@ -2,7 +2,7 @@ const con = require('../src/dbuser')
 
 exports.cxp_list = async (req, res) => {
     const user = req.body
-    const conn = con(user)
+    const conn = await con(user)
 
     const Egreso = conn.model('Egreso')
 
@@ -33,7 +33,7 @@ exports.cxp_list = async (req, res) => {
 
 exports.cxp_create_pago = async (req, res) => {
     let {user, data} = req.body
-    const conn = con(user)
+    const conn = await con(user)
 
     const Egreso = conn.model('Egreso')
     // const Provedor = conn.model('Provedor')
@@ -157,9 +157,9 @@ exports.cxp_create_pago = async (req, res) => {
     })
 }
 
-exports.cxp_update_saldo = (req, res) => {
+exports.cxp_update_saldo = async (req, res) => {
     const {user, data} = req.body
-    const conn = con(user)
+    const conn = await con(user)
     const compras = data.compras
     const importe = data.importe
     const Egreso = conn.model('Egreso')

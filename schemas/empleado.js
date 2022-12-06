@@ -7,7 +7,7 @@ var EmpleadoSchema = Schema({
     nombre: String, 
     edad: Number, 
     sexo: String, 
-    level: Number,
+    level: {type: Number, default: 5},
     ubicacion: { type: Schema.ObjectId, ref: 'Ubicacion' },
     direccion: String,
     telefono: Number,

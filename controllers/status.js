@@ -2,9 +2,9 @@
 const con = require('../src/dbuser')
 
 var controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const params = req.body;
         const Status = conn.model('Status')
 
@@ -31,9 +31,9 @@ var controller = {
 
     },
 
-    getStatuss: (req, res) => {
+    getStatuss: async (req, res) => {
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Status = conn.model('Status')
         Status.find({}).sort('_id').exec( (err, statuss) => {
             conn.close()
@@ -50,10 +50,10 @@ var controller = {
         })
     },
 
-    getStatus: (req, res) => {
+    getStatus: async (req, res) => {
         const statusId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Status = conn.model('Status')
 
         if(!statusId){
@@ -79,10 +79,10 @@ var controller = {
         })
     },
 
-    update: (req, res) => {
+    update: async (req, res) => {
         const statusId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const params = req.body;
         const Status = conn.model('Status')
 
@@ -107,10 +107,10 @@ var controller = {
         })
     },
 
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const statusId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Status = conn.model('Status')
 
         Status.findOneAndDelete({_id: statusId}, (err, statusRemoved) => {

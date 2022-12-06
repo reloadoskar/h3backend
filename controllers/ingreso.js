@@ -1,10 +1,10 @@
 'use strict'
 const con = require('../src/dbuser')
 const controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         //recoger parametros
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Ingreso = conn.model('Ingreso')
         let ingreso = new Ingreso()
 
@@ -51,7 +51,7 @@ const controller = {
 
     getIngresos: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Ingreso = conn.model('Ingreso')
         const resp = await Ingreso
             .find({ importe: { $gt: 0 } }).sort({ fecha: -1, createdAt: -1 })
@@ -75,7 +75,7 @@ const controller = {
 
     getIngreso: async (req, res) => {
         const {user, id} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Ingreso = conn.model('Ingreso')
         if (!ingresoId) {
             return res.status(404).send({
@@ -106,7 +106,7 @@ const controller = {
 
     getCuentasdelosClientes: async (req, res) => {
         const user = req.body
-        const conn = con(user) 
+        const conn = await con(user) 
         const Ingreso = conn.model('Ingreso') 
 
         const resp = await Ingreso
@@ -142,8 +142,8 @@ const controller = {
     },
 
     update: async (req, res) => {
-        const conn = con(user)
         const {user, data} = req.body;
+        const conn = await con(user)
         const Ingreso = conn.model('Ingreso')
 
         const resp = await Ingreso
@@ -168,7 +168,7 @@ const controller = {
 
     delete: async (req, res) => {
         const {user, id} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Ingreso = conn.model('Ingreso')
         const ingreso = await Ingreso
             .findById(id)
@@ -211,9 +211,9 @@ const controller = {
             })
     },
 
-    getIngresosMonthYear: (req, res) => {
+    getIngresosMonthYear: async (req, res) => {
         const {user, month, year} = req.body
-        const conn = con(user)
+        const conn = await con(user)
 
         const Ingreso = conn.model('Ingreso')
 
@@ -239,9 +239,9 @@ const controller = {
             })
     },
 
-    getIngresosDelDia: (req, res) => {
+    getIngresosDelDia: async (req, res) => {
         const {user, fecha} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         console.log(fecha)
         console.log(user)
 

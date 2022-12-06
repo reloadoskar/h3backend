@@ -3,10 +3,10 @@ var mongoose = require('mongoose');
 const con = require('../src/dbuser')
 
 var controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         const params = req.body
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Ingreso = conn.model('Ingreso')
         let ingreso = new Ingreso()
         ingreso.ubicacion = params.ubicacion
@@ -39,7 +39,7 @@ var controller = {
     getCuentasCliente: async (req,res) => {
         const bd= req.params.bd
         const clienteID= req.params.id
-        const conn = con(bd)
+        const conn = await con(bd)
         const Venta = conn.model('Venta')
         const resp = await Venta
             .find({cliente: clienteID, saldo: {$gt: 1}})
@@ -62,7 +62,7 @@ var controller = {
 
     getCuentas: async (req, res) => {
         const user= req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Cliente = conn.model('Cliente')
         const resp = await Cliente
             .find({cuentas: {$ne: []}})
@@ -92,7 +92,7 @@ var controller = {
 
     getCxcPdv: async (req, res) =>{
         const user= req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Ingreso = conn.model('Ingreso')
         const resp = await Ingreso
             .find({saldo: {$gt: 0}})
@@ -115,10 +115,10 @@ var controller = {
             })
     },
 
-    savePago: (req, res) => {
+    savePago: async (req, res) => {
         var params = req.body
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         var Ingreso = conn.model('Ingreso')
         var Cliente = conn.model('Cliente')
         var Venta = conn.model('Venta')

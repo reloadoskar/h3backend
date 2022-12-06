@@ -2,10 +2,10 @@
 const con = require('../src/dbuser')
 
 const controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         const params = req.body;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Egreso = conn.model('Egreso')
         const Ingreso = conn.model('Ingreso')
         let egreso = new Egreso()
@@ -54,11 +54,10 @@ const controller = {
 
     },
 
-
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const ingresoId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Egreso = conn.model('Egreso')
         const Ingreso = conn.model('Egreso')
         Ingreso.findOneAndDelete({_id: ingresoId}, (err, ingresoRemoved) => {

@@ -4,7 +4,7 @@ const con = require('../src/dbuser')
 var controller = {
     getInventario: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const CompraItem = conn.model('CompraItem')
 
         const inventario = await CompraItem
@@ -39,9 +39,9 @@ var controller = {
             })
     },
     
-    getInventarioBy: (req, res) => {
+    getInventarioBy: async (req, res) => {
         const {user, ubicacion} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const CompraItem = conn.model('CompraItem')
         CompraItem.find({ubicacion: mongoose.Types.ObjectId(ubicacion), stock: { $gt: 0.3} })
             .populate('ubicacion')
@@ -67,7 +67,7 @@ var controller = {
 
     getInventarioUbicacion: async (req, res) => {
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const CompraItem = conn.model('CompraItem')
         try{
             const inventario = await CompraItem.aggregate()
@@ -133,9 +133,9 @@ var controller = {
         }
     },
 
-    getMovimientos: (req, res) => {
+    getMovimientos: async (req, res) => {
         const {user, month} = req.body
-        const conn = con(user)        
+        const conn = await con(user)        
         const Movimiento = conn.model('Movimiento')
 
         const movimientos = Movimiento.find({fecha: month}).sort({'createdAt': -1})
@@ -148,33 +148,11 @@ var controller = {
             })
 
     },
-    // getMovimientos: (req, res) => {
-    //     const bd = req.params.bd
-    //     const mes = req.params.mes
-    //     const year = 2022
-    //     const conn = con(bd)
-    //     let f1 = year + "-" + mes + "-01"
-    //     // console.log(f1)
-    //     let f2 = year + "-" + mes + "-31"
-    //     // console.log(f2)
-
-    //     const Movimiento = conn.model('Movimiento')
-
-    //     const movimientos = Movimiento.find({fecha: { $gte: f1, $lte: f2 }}).sort({'createdAt': -1})
-    //         .then(movs=>{
-    //             return res.status(200).send({
-    //                 status: "success",
-    //                 message: "Movimientos encontrados",
-    //                 movimientos: movs 
-    //             })
-    //         })
-
-    // },
-
+    
     moveInventario: async (req, res) => {
         const {user, data} = req.body
         const compraId = data.itemsel.compra._id
-        const conn = con(user)
+        const conn = await con(user)
         const CompraItem = conn.model('CompraItem')
         const Compra = conn.model('Compra')
         const Movimiento = conn.model('Movimiento')
@@ -274,7 +252,7 @@ var controller = {
 
     deleteMovimiento: async (req, res)=>{
         const {user, data} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const CompraItem = conn.model('CompraItem')
         const Compra = conn.model('Compra')
         const Movimiento = conn.model('Movimiento')

@@ -2,10 +2,10 @@
 const con = require('../src/dbuser')
 
 const controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         //recoger parametros
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const TipoCompra = conn.model('TipoCompra')
         
         //Crear el objeto a guardar
@@ -32,9 +32,9 @@ const controller = {
             })
     },
 
-    getTipoCompras: (req, res) => {
+    getTipoCompras: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const TipoCompra = conn.model('TipoCompra')
         TipoCompra.find({}).sort('_id').exec( (err, tipocompras) => {
             conn.close()
@@ -51,10 +51,10 @@ const controller = {
         })
     },
 
-    getTipoCompra: (req, res) => {
+    getTipoCompra: async (req, res) => {
         const tipocompraId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const TipoCompra = conn.model('TipoCompra')
         if(!tipocompraId){
             conn.close()
@@ -79,10 +79,10 @@ const controller = {
         })
     },
 
-    update: (req, res) => {
+    update: async (req, res) => {
         const tipocompraId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const params = req.body;
         const TipoCompra = conn.model('TipoCompra')
 
@@ -107,10 +107,10 @@ const controller = {
         })
     },
 
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const tipocompraId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const TipoCompra = conn.model('TipoCompra')
         TipoCompra.findOneAndDelete({_id: tipocompraId}, (err, tipocompraRemoved) => {
             conn.close()

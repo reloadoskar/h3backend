@@ -2,9 +2,9 @@
 const con = require('../src/dbuser')
 
 const controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const params = req.body;
         const TipoPago = conn.model('TipoPago')
         let tipopago = new TipoPago();
@@ -28,9 +28,9 @@ const controller = {
         })
     },
 
-    getTipoPagos: (req, res) => {
+    getTipoPagos: async (req, res) => {
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const TipoPago = conn.model('TipoPago')
         TipoPago.find({}).sort('_id').exec( (err, tipopagos) => {
             conn.close()
@@ -47,10 +47,10 @@ const controller = {
         })
     },
 
-    getTipoPago: (req, res) => {
+    getTipoPago: async (req, res) => {
         const tipopagoId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const TipoPago = conn.model('TipoPago')
         if(!tipopagoId){
             conn.close()
@@ -75,10 +75,10 @@ const controller = {
         })
     },
 
-    update: (req, res) => {
+    update: async (req, res) => {
         const tipopagoId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const params = req.body;
         const TipoPago = conn.model('TipoPago')
         
@@ -103,10 +103,10 @@ const controller = {
         })
     },
 
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const tipopagoId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const TipoPago = conn.model('TipoPago')
         TipoPago.findOneAndDelete({_id: tipopagoId}, (err, tipopagoRemoved) => {
             conn.close()

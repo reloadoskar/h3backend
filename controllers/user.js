@@ -11,9 +11,9 @@ tryPeriod = new Date(tryPeriod).toISOString()
 process.env.SECRET_KEY = 'muffintop'
 
 const controller = {
-    update: (req, res) => {
+    update: async (req, res) => {
         const {user, data} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const params = data;
         const Empleado = conn.model('Empleado')
         // console.log(params)
@@ -40,7 +40,7 @@ const controller = {
     },
     getEmpleados: async (req, res) => {
         const user = req.body
-        const conn = con(user)        
+        const conn = await con(user)        
         try{
             const Empleado = conn.model('Empleado')
             const r = await Empleado.find()
@@ -58,10 +58,10 @@ const controller = {
         }
     },
     
-    addEmpleado: (req, res) => {
+    addEmpleado: async (req, res) => {
         const {user, data} = req.body
-        const conn = conexion_app()
-        const conn2 = con(user)
+        const conn = await conexion_app()
+        const conn2 = await con(user)
         // console.log(params)
         const User = conn.model('User')
         const Empleado = conn2.model('Empleado')
@@ -111,10 +111,10 @@ const controller = {
         }     
 
     },
-    delEmpleado: (req,res) =>{
+    delEmpleado: async (req,res) =>{
         const {user, id} = req.body
         const empleadoId = id
-        const conn = con(user)
+        const conn = await con(user)
         const bdMaster = conexion_app()
         const Empleado = conn.model('Empleado')
         const User = bdMaster.model('User')
@@ -434,9 +434,9 @@ const controller = {
         })
     },
 
-    restartApp: (req, res) => {
+    restartApp: async (req, res) => {
         const bd= req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Cliente = conn.model('Cliente')
         const CompraItem = conn.model('CompraItem')
         const Compra = conn.model('Compra')

@@ -3,8 +3,7 @@ const con = require('../src/dbuser')
 const controller = {
     save: async (req, res) => {
         const {user, data} = req.body;
-        console.log(data)
-        const conn = con(user)
+        const conn = await con(user)
         const Egreso = conn.model('Egreso')
         const Compra = conn.model('Compra')
         const Inversion = conn.model('Inversion')
@@ -61,7 +60,7 @@ const controller = {
 
     getEgresos: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Egreso = conn.model('Egreso')
         const resp = await Egreso
             .find({saldo:{$eq:0}}).sort({fecha: -1, createdAt: -1})
@@ -86,7 +85,7 @@ const controller = {
 
     getEgreso: async (req, res) => {
         const {user, id} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Egreso = conn.model('Egreso')
         const resp = await Egreso
             .findById(id)
@@ -111,7 +110,7 @@ const controller = {
 
     update: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const Egreso = conn.model('Egreso')
 
             // Find and update
@@ -135,10 +134,9 @@ const controller = {
             })
     },
 
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const {user, id} = req.body
-        console.log(req.body)
-        const conn = con(user)
+        const conn = await con(user)
         const Egreso = conn.model('Egreso')
         
         Egreso.findOneAndDelete({ _id: id }, (err, egresoRemoved) => {
@@ -156,9 +154,9 @@ const controller = {
         })
     },
 
-    getEgresosDelDia: (req, res) => {
+    getEgresosDelDia: async (req, res) => {
         const {user, fecha} = req.body
-        const conn = con(user)
+        const conn = await con(user)
     
         const Egreso = conn.model('Egreso')
         try{
@@ -187,7 +185,7 @@ const controller = {
 
     getEgresosMonthYear: async (req, res) =>{
         const {user, year, month} = req.body
-        const conn = con(user)        
+        const conn = await con(user)        
         const Egreso = conn.model('Egreso')
 
         const eg = Egreso

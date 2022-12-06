@@ -2,9 +2,9 @@
 const con = require('../src/dbuser')
 
 const controller = {
-    save: (req, res) => {
+    save: async (req, res) => {
         const {user, data} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Producto = conn.model('Producto')
 
         let producto = new Producto();
@@ -36,7 +36,7 @@ const controller = {
 
     getProductos: async (req, res) => {
         const user = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Producto = conn.model('Producto')
         const Unidad = conn.model('Unidad')
         const Empaque = conn.model('Empaque')
@@ -66,7 +66,7 @@ const controller = {
     getProducto: async (req, res) => {
         const productoId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Producto = conn.model('Producto')
         if(!productoId){
             mongoose.connection.close()
@@ -96,15 +96,15 @@ const controller = {
             })        
     },
 
-    getProductosMasVendidos: (req, res) => {
+    getProductosMasVendidos: async (req, res) => {
         const {user, year, month} = req.body
-        const conn = con(user)
+        const conn = await con(user)
         const Producto = conn.model('Producto')
     },
 
-    update: (req, res) => {
+    update: async (req, res) => {
         const {user, data} = req.body;
-        const conn = con(user)
+        const conn = await con(user)
         const params = data;
         params.empaque = data.empaque._id
         params.unidad = data.unidad._id
@@ -132,10 +132,10 @@ const controller = {
         })
     },
 
-    delete: (req, res) => {
+    delete: async (req, res) => {
         const productoId = req.params.id;
         const bd = req.params.bd
-        const conn = con(bd)
+        const conn = await con(bd)
         const Producto = conn.model('Producto')
         Producto.findOneAndDelete({_id: productoId}, (err, productoRemoved) => {
             conn.close()
