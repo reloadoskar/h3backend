@@ -51,6 +51,7 @@ const controller = {
                 .sort('createdAt')
 
             if(!clientes){
+                conn.close()
                 errorStatusCode=401
                 throw new Error("No se hallaron los clientes.")
             }
@@ -82,6 +83,7 @@ const controller = {
             const Cliente = conn.model('Cliente')
             const cliente = await Cliente.findById(id)
             if(!cliente){
+                conn.close()
                 errorStatusCode=401
                 throw new Error("No se encontro el cliente")
             }
@@ -131,12 +133,14 @@ const controller = {
         const Cliente = conn.model('Cliente')
         Cliente.findOneAndDelete({ _id: id }, (err, clienteRemoved) => {
                 if (!clienteRemoved) {
+                    conn.close()
                     return res.status(500).send({
                         status: 'error',
                         message: 'No se pudo borrar el cliente.'
                     })
                 }
                 if (err) {
+                    conn.close()
                     return res.status(500).send({
                         status: 'error',
                         message: 'Ocurrio un error.'

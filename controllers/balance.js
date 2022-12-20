@@ -3,12 +3,12 @@ const con = require('../src/dbuser')
 
 const controller = {
     getBalance: async (req, res) => {
-        const bd = req.params.bd
-        const conn = con(bd)
+        const user = req.body
+        const conn = con(user)
         console.log("getBalance")
         const Balance = conn.model('Balance', require('../schemas/balance'))
     
-        const resp = await Balance.findOne().sort('-fecha')
+        const resp = await Balance.findOne().sort('fecha')
             .lean()
             .then(doc => {
                 return res.status(200).send({
