@@ -78,6 +78,7 @@ const controller = {
         const conn = await con(user)
         const Ingreso = conn.model('Ingreso')
         if (!ingresoId) {
+            conn.close()
             return res.status(404).send({
                 status: 'error',
                 message: 'No existe el ingreso'
@@ -134,6 +135,7 @@ const controller = {
                 })
             })
             .catch(err => {
+                conn.close()
                 return res.status(200).send({
                     status: "error",
                     message: "aca: " + err,

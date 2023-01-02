@@ -140,6 +140,7 @@ var controller = {
 
         const movimientos = Movimiento.find({fecha: month}).sort({'createdAt': -1})
             .then(movs=>{
+                conn.close()
                 return res.status(200).send({
                     status: "success",
                     message: "Movimientos encontrados",
@@ -177,6 +178,7 @@ var controller = {
             movimiento.neto=data.neto
             movimiento.save((err, movimiento) => {
                 if(err){
+                    conn.close()
                     return res.status(500).send({
                         status: 'error',
                         message: "No se pudo guardar el movimiento.",
@@ -216,6 +218,7 @@ var controller = {
                         nitem.importe = nitem.cantidad * itemsaved.costo
                         nitem.save((err, nitemsaved) => {
                             if(err){
+                                conn.close()
                                 return res.status(500).send({
                                     status: 'error',
                                     message: "No se creó el nuevo item.",

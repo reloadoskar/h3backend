@@ -74,7 +74,7 @@ const controller = {
         const {user, data} = req.body;
         const conn = await con(user)
         const Empresa = conn.model('Empresa')
-        console.log(data)
+        // console.log(data)
         const resp = await Empresa
             .findOneAndUpdate({ _id: data._id }, data, { new: true })
             .then(empSaved =>{

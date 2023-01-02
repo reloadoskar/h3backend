@@ -423,7 +423,6 @@ var controller = {
     update: async (req, res) => {
         const {user, data} = req.body
         const conn = await con(user)
-        console.log(data)
         const Compra = conn.model('Compra')
         Compra
             .findOneAndUpdate({"_id": data._id}, data, { new: true }, (err, compraUpdated) => {
@@ -457,9 +456,6 @@ var controller = {
         const VentaItem = conn.model('VentaItem')
 
         const itemsStatus = await CompraItem.deleteMany({compra: compraId})
-            // .then(()=>{
-                
-            // })
             .catch((err)=>{
                 return res.status(200).send({
                     status: "error",

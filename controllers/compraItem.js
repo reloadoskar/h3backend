@@ -4,9 +4,9 @@ const controller = {
 
     save: async (req, res) => {
         //recoger parametros
-        const params = req.body;
-        const bd = req.params.bd
-        const conn = await con(bd)
+        // const params = req.body;
+        // const bd = req.params.bd
+        // const conn = await con(bd)
     },
 
     getItems: async (req, res) => {

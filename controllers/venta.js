@@ -304,6 +304,7 @@ var controller = {
             .populate({ path: 'producto', select: 'descripcion' })
             .populate({ path: 'compraItem', select: 'clasificacion' })
             .then(data => {
+                conn.close()
                 return res.status(200).send({
                     status: 'success',
                     ventas: data
@@ -411,7 +412,7 @@ var controller = {
         let noseguardolaventa = await laventa.save().catch(err => console.log(err))
         let noventaitemseliminados = await VentaItem.deleteMany({ "venta": laventa._id }).catch(err => err)
         let noingresoseliminados = await Ingreso.deleteMany({ "venta": laventa._id }).catch(err => err)
-
+        conn.close()
         return res.status(200).send({
             status: 'success',
             mensajes: mensajes,

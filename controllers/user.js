@@ -98,6 +98,7 @@ const controller = {
             nempleado.facebook = data.facebook
             nempleado.save((err, usrSvd) => {
                 conn.close()
+                conn2.close()
                 if(err){console.log(err)}
                 return res.status(200).send({
                     status: "success",
@@ -329,77 +330,14 @@ const controller = {
             throw new Error('No se genero el token.')
         }
         console.log("Token generado, Bienvenido. 🤜🤛")
+        conn.close()
+        newConn.close()
         return res.status(200).send({
             status: 'success',
             message: 'Bienvenido '+payload.nombre,
             token: token
         })
 
-            // User.findOne({
-            //     email: usuario
-            // })
-            // .lean()
-            // .then( user => {
-            //     // console.log(user)
-            //     if(user){
-            //         if(bcrypt.compareSync(password, user.password)){
-            //             const conn2 = con(user.database)
-            //             const Empleado = conn2.model('Empleado')
-            //             Empleado.findById(user._id)
-            //             .populate('ubicacion')
-            //             // .lean()
-            //             .then(emp => {
-            //                 conn2.close()
-            //                 conn.close()
-            //                 const payload = {
-            //                     _id: emp._id,
-            //                     nombre: emp.nombre,
-            //                     apellido: emp.apellido,
-            //                     email: emp.email,
-            //                     ubicacion: emp.ubicacion,
-            //                     level: emp.level,
-            //                     database: user.database,
-            //                     tryPeriodEnds: user.tryPeriodEnds,
-            //                     paidPeriodEnds: user.paidPeriodEnds,
-            //                 }
-            //                 let token = jwt.sign(payload, process.env.SECRET_KEY, {
-            //                     expiresIn: '12h'
-            //                 })
-            //                 return res.status(200).send({
-            //                     status: 'success',
-            //                     message: 'Bienvenido '+payload.nombre,
-            //                     token
-            //                 })
-            //             })
-            //             .catch(err => {
-            //                 console.log(err)
-            //                 conn2.close()
-            //                 conn.close()
-            //                 return res.status(200).send({
-            //                     status: 'error',
-            //                     message: "El empleado es incorrecto.",
-            //                     err
-            //                 })    
-            //             })
-            //         }else{
-            //             return res.status(200).send({
-            //                 status: 'error',
-            //                 message: "El usuario o la contraseña son incorrectos."
-            //             })
-            //         }
-            //     }else{
-            //         return res.status(200).send({
-            //             status: 'error',
-            //             message: "El usuario no existe."
-            //         })
-            //     }
-            // })
-            // .catch(err => {
-            //     return res.status(200).send({
-            //         status: "error",
-            //         message: "Algo paso con la BASE DE DATOS."+err,
-            //     })
-            // })
         }catch(err){
             console.log(err)
             return res.status(500).send({
@@ -430,6 +368,7 @@ const controller = {
             }
         })
         .catch(err => {
+            conn.close()
             res.send({'error': err})
         })
     },

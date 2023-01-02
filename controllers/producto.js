@@ -97,9 +97,9 @@ const controller = {
     },
 
     getProductosMasVendidos: async (req, res) => {
-        const {user, year, month} = req.body
-        const conn = await con(user)
-        const Producto = conn.model('Producto')
+        // const {user, year, month} = req.body
+        // const conn = await con(user)
+        // const Producto = conn.model('Producto')
     },
 
     update: async (req, res) => {
