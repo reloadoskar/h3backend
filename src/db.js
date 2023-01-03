@@ -7,7 +7,7 @@ module.exports = function conexionLobby(){
     useNewUrlParser: true,
     useUnifiedTopology: true,
     connectTimeoutMS: 9000,
-    maxTimeMS:20000,
+    // maxTimeMS:20000,
     dbName: "DB_HADRIA2_MASTER",
   });
   conn.model('User', require('../schemas/user'))
