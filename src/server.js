@@ -16,5 +16,6 @@ process.on('uncaughtException', err => {
 
 process.on('SIGINT', function(err) {
     console.log("APAGANDO SERVIDOR.")
+    mongoose.connection.close()
     process.exit(err ? 1 : 0)
 })
