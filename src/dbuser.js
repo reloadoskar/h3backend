@@ -7,6 +7,7 @@ module.exports = async function conexionCliente(user) {
               useNewUrlParser: true,
               useUnifiedTopology: true,
               connectTimeoutMS: 9000,
+              maxTimeMS:20000,
               dbName: "HDR_USR_"+user.database,
           })
           conn.model('Balance', require('../schemas/balance'));
