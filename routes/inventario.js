@@ -13,4 +13,10 @@ router.post('/inventario/:ubicacion', Inventario.getInventarioBy);
 router.post('/inventarioxubicacion/', Inventario.getInventarioUbicacion);
 router.post('/inventario/delete/movimiento/', Inventario.deleteMovimiento);
 
+router.post('/cambios/ubicacion', Inventario.getCambiosUbicacion)
+router.post('/cambios/solicitud', Inventario.createSolicitudCambio)
+router.post('/cambios', Inventario.getCambios)
+router.post('/cambios/stockup', Inventario.stockUp)
+router.post('/cambios/aceptar', Inventario.aceptarCambio)
+
 module.exports = router;

@@ -133,6 +133,110 @@ var controller = {
         }
     },
 
+    getCambios: async (req, res) => {
+        const {user} = req.body
+        const conn = await con(user) 
+        const Cambio = conn.model('Cambio')
+
+        const cambios = await Cambio.find()
+            .populate('ubicacion compraItem')
+
+        if(!cambios){
+            return res.status(404).send({
+                status: "error",
+                message: "No se encontraron resultados. 🤷‍♂️😢",
+            })
+        }
+
+        return res.status(200).send({
+            status: "success",
+            message: "Cambios encontrados",
+            cambios: cambios 
+        })
+    },
+
+    getCambiosUbicacion: async (req, res) => {
+        const {user, ubicacion, fecha} = req.body
+        const conn = await con(user) 
+        const Cambio = conn.model('Cambio')
+
+        const cambiosUbicacion = Cambio.find({ubicacion: ubicacion, fecha: fecha})
+
+        if(!cambiosUbicacion){
+            return res.status(404).send({
+                status: "error",
+                message: "No se encontraron resultados. 🤷‍♂️😢",
+            })
+        }
+        return res.status(200).send({
+            status: "success",
+            message: "Cambios encontrados",
+            cambios: cambiosUbicacion 
+        })
+    },
+
+    createSolicitudCambio: async (req, res) => {
+        const {user, solicitud} = req.body
+        const conn = await con(user) 
+        const Cambio = conn.model('Cambio')
+
+        const respuesta = await Cambio.create(solicitud)
+
+        if(!respuesta){
+            return res.status(404).send({
+                status: "error",
+                message: "No sé. 🤷‍♂️😢",
+            })
+        }
+        await respuesta.populate('ubicacion compraItem')
+        return res.status(200).send({
+            status: "success",
+            message: "Solicitud registrada",
+            respuesta: respuesta
+        })
+    },
+
+    stockUp: async (req, res) => {
+        const {user, respuesta} = req.body
+        const conn = await con(user) 
+        const Cambio = conn.model('Cambio')
+        const resp = await Cambio.findOneAndUpdate({"_id":respuesta._id}, respuesta, {new: true})
+
+        if(!resp){
+            return res.status(404).send({
+                status: "error",
+                message: "No sé. 🤷‍♂️😢",
+            })
+        }
+
+        await resp.populate('ubicacion compraItem')
+
+        return res.status(200).send({
+            status: "success",
+            message: "Se envio la respuesta.",
+            cambio: resp
+        })
+    },
+
+    aceptarCambio: async (req, res) => {
+        const {user, firma} = req.body
+        const conn = await con(user)
+        const Cambio = conn.model('Cambio')
+        const cambioTerminado = await Cambio.findOneAndUpdate({'_id':firma._id}, firma, {new:true})   
+        if(!cambioTerminado){
+            return res.status(404).send({
+                status: "error",
+                message: "No sé. 🤷‍♂️😢",
+            })
+        }
+        await cambioTerminado.populate('ubicacion compraItem')
+        return res.status(200).send({
+            status: "success",
+            message: "Se envio la firma.",
+            cambio: cambioTerminado
+        })
+    },
+
     getMovimientos: async (req, res) => {
         const {user, month} = req.body
         const conn = await con(user)        

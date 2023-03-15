@@ -17,6 +17,7 @@ var VentaSchema = Schema({
     pagos: [{type: Schema.ObjectId, ref: 'Ingreso'}],
     status: String,
     itemsCancelados: [{}],
+    comentario: String
 },{
     timestamps: true
 });

@@ -7,7 +7,7 @@ module.exports = async function conexionCliente(user) {
               useNewUrlParser: true,
               useUnifiedTopology: true,
               connectTimeoutMS: 9000,
-              // maxTimeMS:20000,
+              maxPoolSize: 10,
               dbName: "HDR_USR_"+user.database,
           })
           conn.model('Balance', require('../schemas/balance'));
@@ -40,6 +40,7 @@ module.exports = async function conexionCliente(user) {
           conn.model('Venta', require('../schemas/venta'));
           conn.model('VentaItem', require('../schemas/venta_item'));
           conn.model('Liquidacion', require('../schemas/liquidacion'));
+          conn.model('Cambio', require('../schemas/cambio'));
           
           conn.on('connected', function(){
             console.log("BD> Bienvenido. ✅")

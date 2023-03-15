@@ -9,11 +9,6 @@ const server = app.listen(PORT, () => {
     console.log("Corriendo en ambiente: "  + process.env.NODE_ENV);
 })
 
-process.on('uncaughtException', err => {
-    console.log(`ERROR DE CONEXION: ${err.message}`)
-    // process.exit(1)
-  })
-
 process.on('SIGINT', function(err) {
     console.log("APAGANDO SERVIDOR.")
     mongoose.connection.close()
