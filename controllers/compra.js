@@ -52,6 +52,8 @@ var controller = {
                             itmsToSave.push(compraItem)
                         })
 
+                        compra.itemsOrigen = itmsToSave
+
                         CompraItem.insertMany(itmsToSave, (err, items) => {
                             if (err) console.log(err)
                             items.map(itm => {
