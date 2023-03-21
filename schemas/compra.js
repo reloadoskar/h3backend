@@ -10,6 +10,7 @@ var CompraSchema = Schema({
     ubicacion: {type: Schema.ObjectId, ref: 'Ubicacion'},
     tipoCompra: {type: Schema.ObjectId, ref: 'TipoCompra'},
     items: [{ type: Schema.ObjectId, ref: 'CompraItem'}],
+    itemsOrigen: [],
     gastos: [{ type: Schema.ObjectId, ref: 'Egreso'}],
     pagos: [{ type: Schema.ObjectId, ref: 'Egreso'}],
     ventas: [{ type: Schema.ObjectId, ref: 'Venta' }],

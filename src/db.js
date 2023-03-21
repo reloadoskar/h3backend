@@ -7,12 +7,12 @@ module.exports = function conexionLobby(){
     useNewUrlParser: true,
     useUnifiedTopology: true,
     connectTimeoutMS: 9000,
-    // maxTimeMS:20000,
+    maxPoolSize: 10,
     dbName: "DB_HADRIA2_MASTER",
   });
   conn.model('User', require('../schemas/user'))
   conn.once("open", function() {
-      console.log("CONECTADO CON LA BD 🖖🤖");
+      console.log(">CONECTADO CON LA FUENTE. 🖖🤖");
   });
   conn.on('error',(err) =>{
     conn.close()
@@ -20,11 +20,12 @@ module.exports = function conexionLobby(){
   })
   conn.on('close', () => {
     conn.close()
-    console.log("BD CLOSED!! 👾")
+    console.log(">SALIENDO DE LA FUENTE. 👾")
   })
-  conn.on('disconnect', () => {
-    conn.close()
-    console.log('BD OUT!! 👾')
+  conn.on('disconnected', function(){
+    mongoose.connection.close(() => {
+      console.log("> DESCONECTADO. 🖖");
+    })
   })
   return conn
 }

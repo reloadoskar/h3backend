@@ -4,6 +4,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var CambioSchema = Schema({
+    folio: Number,
     status: {type: String, default: 'SOLICITANDO'},
     ubicacion: {type: Schema.ObjectId, ref: 'Ubicacion'},
     fecha: {type: String},
