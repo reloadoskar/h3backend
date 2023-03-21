@@ -147,7 +147,7 @@ var controller = {
                 message: "No se encontraron resultados. 🤷‍♂️😢",
             })
         }
-
+        conn.close()
         return res.status(200).send({
             status: "success",
             message: "Cambios encontrados",
@@ -168,6 +168,7 @@ var controller = {
                 message: "No se encontraron resultados. 🤷‍♂️😢",
             })
         }
+        conn.close()
         return res.status(200).send({
             status: "success",
             message: "Cambios encontrados",
@@ -179,6 +180,7 @@ var controller = {
         const {user, solicitud} = req.body
         const conn = await con(user) 
         const Cambio = conn.model('Cambio')
+        const CompraItem = conn.model('CompraItem')
 
         const respuesta = await Cambio.create(solicitud)
 
@@ -188,7 +190,23 @@ var controller = {
                 message: "No sé. 🤷‍♂️😢",
             })
         }
+
+        if(solicitud.descontarInventario){
+            console.log("descontando de inventario..."+solicitud.compraItem)
+            const descinv = await CompraItem.updateOne( 
+                {_id: solicitud.compraItem },
+                {"$inc": { "stock":  -solicitud.peson }} 
+                )
+                .then(res=>{
+                    console.log(res)
+                })
+                .catch(err=>{
+                    console.log(err.message,'error')
+                })
+        }
+
         await respuesta.populate('ubicacion compraItem')
+        conn.close()
         return res.status(200).send({
             status: "success",
             message: "Solicitud registrada",
@@ -197,11 +215,23 @@ var controller = {
     },
 
     stockUp: async (req, res) => {
-        const {user, respuesta} = req.body
+        const {user, respuesta: data} = req.body
+        // console.log(data)
         const conn = await con(user) 
         const Cambio = conn.model('Cambio')
-        const resp = await Cambio.findOneAndUpdate({"_id":respuesta._id}, respuesta, {new: true})
+        const CompraItem = conn.model('CompraItem')
 
+        const resp = await Cambio.findOneAndUpdate({"_id":data._id}, data, {new: true})
+
+        if(data.respuesta.descontarInventario){
+            console.log("descontando de inventario..."+data.respuesta.compraItem)
+            const descinv = await CompraItem.updateOne( 
+                {_id: data.respuesta.compraItem._id },
+                {"$inc": { "stock":  -data.respuesta.peson }} 
+                ).catch(err=>{
+                    console.log(err.message,'error')
+                })
+        }
         if(!resp){
             return res.status(404).send({
                 status: "error",
@@ -210,7 +240,7 @@ var controller = {
         }
 
         await resp.populate('ubicacion compraItem')
-
+        conn.close()
         return res.status(200).send({
             status: "success",
             message: "Se envio la respuesta.",
@@ -230,6 +260,7 @@ var controller = {
             })
         }
         await cambioTerminado.populate('ubicacion compraItem')
+        conn.close()
         return res.status(200).send({
             status: "success",
             message: "Se envio la firma.",
@@ -470,27 +501,6 @@ var controller = {
                 })
             })
         })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // return res.status(200).send({
-        //     status:'success',
-        //     message: "Movimiento eliminado correctamente. 👍",
-        //     movimiento
-        // })
     }
 }
 
