@@ -134,11 +134,16 @@ var controller = {
     },
 
     getCambios: async (req, res) => {
-        const {user} = req.body
+        const {user, fecha} = req.body
         const conn = await con(user) 
         const Cambio = conn.model('Cambio')
+        let d = new Date(fecha)
+        var firstDay = new Date(d.getFullYear(), d.getMonth()+1, 1);
+        var lastDay = new Date(d.getFullYear(), d.getMonth() + 2, 0);
 
-        const cambios = await Cambio.find()
+        const cambios = await Cambio.find(
+            {createdAt: { $gt: firstDay, $lt: lastDay }}
+        )
             .populate('ubicacion compraItem')
 
         if(!cambios){
@@ -182,6 +187,9 @@ var controller = {
         const Cambio = conn.model('Cambio')
         const CompraItem = conn.model('CompraItem')
 
+        const cambioscount = await Cambio.estimatedDocumentCount()
+        const foliosig = cambioscount + 1
+        solicitud.folio = foliosig
         const respuesta = await Cambio.create(solicitud)
 
         if(!respuesta){
