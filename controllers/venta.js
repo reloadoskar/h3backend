@@ -303,6 +303,7 @@ var controller = {
             .populate({ path: 'ubicacion', select: 'nombre' })
             .populate({ path: 'producto', select: 'descripcion' })
             .populate({ path: 'compraItem', select: 'clasificacion' })
+            .populate({ path: 'compra', select: 'folio clave' })
             .then(data => {
                 conn.close()
                 return res.status(200).send({
