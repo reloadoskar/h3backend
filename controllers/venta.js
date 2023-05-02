@@ -65,18 +65,13 @@ var controller = {
                 ingreso.importe = data.total
             }
             
-            console.log("... Guardando Ingreso...")
-            let IngresoSaved = await ingreso.save()
-            if(!IngresoSaved){
-                errorStatusCode=401
-                throw new Error("No se guardo el ingreso")
-            }
+            
             
             console.log("... Creando venta...")
             let numVentas = await Venta.estimatedDocumentCount()
             if(!numVentas){
-                errorStatusCode=401
-                throw new Error("No se obtuvo el nuevo folio")
+                numVentas= 0
+                // throw new Error("No se obtuvo el nuevo folio")
             }
             venta.folio = numVentas + 1
             venta.ubicacion = data.ubicacion
@@ -136,6 +131,13 @@ var controller = {
             if(!ventaSvd){
                 errorStatusCode=401
                 throw new Error("No se guardo la pnchx venta!! 😡😡")
+            }
+
+            console.log("... Guardando Ingreso...")
+            let IngresoSaved = await ingreso.save()
+            if(!IngresoSaved){
+                errorStatusCode=401
+                throw new Error("No se guardo el ingreso")
             }
 
             let vntaPpltd = await Venta.findById(ventaSvd._id)
@@ -222,7 +224,7 @@ var controller = {
                 if (err) {
                     return res.status(500).send({
                         status: "error",
-                        message: err
+                        message: err.message
                     })
                 }
                 if (!venta) {

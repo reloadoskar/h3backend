@@ -21,4 +21,5 @@ router.post('/compra/item/update', CompraController.updateCompraItem);
 router.post('/compra/:id', CompraController.delete);
 router.post('/compra/cancel/:id', CompraController.delete);
 
+router.post('/compra/addmerma/', CompraController.addMerma);
 module.exports = router;

@@ -42,7 +42,7 @@ var controller = {
                             compraItem.ubicacion = data.ubicacion
                             compraItem.clasificacion = "S/C"
                             compraItem.compra = compra._id
-                            compraItem.producto = item.producto._id
+                            compraItem.producto = item.producto
                             compraItem.cantidad = item.cantidad
                             compraItem.stock = item.cantidad
                             compraItem.empaques = item.empaques
@@ -175,19 +175,17 @@ var controller = {
     },
 
     getCompras: async (req, res) => {
-        const {user, mes, year} = req.body
-        // if (mes < 10) {
-        //     mes = "0" + mes
-        // }
+        const {user, mesAnio} = req.body
         const conn = await con(user)
         const Compra = conn.model('Compra')
         const Liquidacion = conn.model('Liquidacion')
         const compra = await Compra
             .find({
-                fecha: { $gt: year + "-" + mes + "-00", $lt: year + "-" + mes + "-32" }
+                fecha: { $gt: mesAnio + "-00", $lt: mesAnio + "-32" }
+                // fecha: { $gt: year + "-" + mes + "-00", $lt: year + "-" + mes + "-32" }
             })
             .sort('folio')
-            .lean()
+            // .lean()
             .populate('provedor', 'nombre diasDeCredito comision email cta1 tel1')
             .populate('ubicacion')
             .populate('tipoCompra')
@@ -234,6 +232,10 @@ var controller = {
                     populate: { path: 'unidad'},
                     populate: { path: 'empaque'}
                 }
+            })
+            .populate({
+                path: 'ventaItems',
+                populate: { path: 'compraItem', select: 'clasificacion '}
             })
             // compra.liquidacion = await Liquidacion.find({compra: compra._id})
             // console.log(compra)
@@ -684,6 +686,9 @@ var controller = {
                     })
 
             })
+    },
+    addMerma: async (req, res) => {
+
     }
 
 }
