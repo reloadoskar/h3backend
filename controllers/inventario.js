@@ -295,7 +295,7 @@ var controller = {
     
     moveInventario: async (req, res) => {
         const {user, data} = req.body
-        const compraId = data.itemsel.compra._id
+        const compraId = data.itemsel.compra._id || data.itemsel.compra
         const conn = await con(user)
         const CompraItem = conn.model('CompraItem')
         const Compra = conn.model('Compra')
@@ -350,7 +350,7 @@ var controller = {
                         }
                         const nitem = new CompraItem()
                         nitem.ubicacion = data.destino._id
-                        nitem.compra = data.itemsel.compra._id
+                        nitem.compra = data.itemsel.compra
                         nitem.producto = data.itemsel.producto._id
                         nitem.cantidad = data.itemselcantidad
                         nitem.clasificacion = data.clasificacion
@@ -384,7 +384,8 @@ var controller = {
                                     return res.status(200).send({
                                         status:'success',
                                         message: "Movimiento guardado correctamente. 👍",
-                                        movimiento
+                                        movimiento,
+                                        compraItem: nitem
                                     })
                                 })
 
