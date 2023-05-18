@@ -64,9 +64,9 @@ const controller = {
     },
 
     getProducto: async (req, res) => {
-        const productoId = req.params.id;
-        const bd = req.params.bd
-        const conn = await con(bd)
+        const {user, id} = req.body
+        const productoId = id;
+        const conn = await con(user)
         const Producto = conn.model('Producto')
         if(!productoId){
             mongoose.connection.close()
@@ -76,24 +76,38 @@ const controller = {
                 message: 'No existe el producto'
             })
         }
-        const resp = await Producto
-            .findById(productoId)
-            .lean()
-            .then( producto => {
-                conn.close()
-                return res.status(200).send({
-                    status: 'success',
-                    producto
-                })
+        const producto = await Producto.findById(productoId).populate("unidad empaque")
+
+        if(!producto){
+            return res.status(401).send({
+                status: "error",
+                message: "No se encontro el producto."
             })
-            .catch(err => {
-                conn.close()
-                return res.status(404).send({
-                    status: 'success',
-                    mesage: 'No existe el producto.',
-                    err
-                })
-            })        
+        }
+
+        conn.close()
+        return res.status(200).send({
+            status: 'success',
+            mesage: 'Producto encontrado.',
+            product: producto
+        })
+
+
+            // .then( producto => {
+            //     conn.close()
+            //     return res.status(200).send({
+            //         status: 'success',
+            //         producto
+            //     })
+            // })
+            // .catch(err => {
+            //     conn.close()
+            //     return res.status(404).send({
+            //         status: 'success',
+            //         mesage: 'No existe el producto.',
+            //         err
+            //     })
+            // })        
     },
 
     getProductosMasVendidos: async (req, res) => {

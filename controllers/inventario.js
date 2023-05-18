@@ -301,9 +301,16 @@ var controller = {
         const Compra = conn.model('Compra')
         const Movimiento = conn.model('Movimiento')
 
-        const numeroMovimientos = await Movimiento.countDocuments()
+        let numeroMovimientos = await Movimiento.countDocuments()
+        if(!numeroMovimientos){
+            return res.status(404).send({
+                status: "error",
+                message: "Error al numerar los movimientos",
+            })
+        }
 
-        const movimiento = new Movimiento()
+        // const movimiento = new Movimiento()
+        let movimiento = {}
             movimiento.folio = numeroMovimientos + 1
             movimiento.status = "OK"
             movimiento.fecha = data.fecha
@@ -319,82 +326,131 @@ var controller = {
             movimiento.ttara=data.ttara
             movimiento.bruto=data.bruto
             movimiento.neto=data.neto
-            movimiento.save((err, movimiento) => {
-                if(err){
-                    conn.close()
-                    return res.status(500).send({
-                        status: 'error',
-                        message: "No se pudo guardar el movimiento.",
-                        err
-                    })
-                }
-                CompraItem.findById(data.itemsel._id).exec((err, item) => {
-                    if(err || !item){
-                        return res.status(500).send({
-                            status: 'error',
-                            message: "No se encontro el item origen.",
-                            err
-                        })
-                    }
-                    item.cantidad -= data.itemselcantidad
-                    item.stock -= data.itemselcantidad
-                    item.empaques -= data.itemselempaques
-                    item.empaquesStock -= data.itemselempaques
-                    item.importe = item.cantidad * item.costo
-                    item.save((err, itemsaved) => {
-                        if(err){
-                            return res.status(500).send({
-                                status: 'error',
-                                message: "No se pudo actualizar el item origen"
-                            })
-                        }
-                        const nitem = new CompraItem()
-                        nitem.ubicacion = data.destino._id
-                        nitem.compra = data.itemsel.compra
-                        nitem.producto = data.itemsel.producto._id
-                        nitem.cantidad = data.itemselcantidad
-                        nitem.clasificacion = data.clasificacion
-                        nitem.stock = data.itemselcantidad
-                        nitem.empaques = data.itemselempaques
-                        nitem.empaquesStock = data.itemselempaques
-                        nitem.costo = itemsaved.costo
-                        nitem.importe = nitem.cantidad * itemsaved.costo
-                        nitem.save((err, nitemsaved) => {
-                            if(err){
-                                conn.close()
-                                return res.status(500).send({
-                                    status: 'error',
-                                    message: "No se creó el nuevo item.",
-                                    err
-                                })
-                            }
-                            Compra.findById(compraId).exec((err, compra) => {
-                                if(err){console.log(err)}
-                                compra.items.push(nitemsaved._id)
-                                compra.movimientos.push(movimiento._id)
-                                compra.save((err, compra) => {
-                                    conn.close()
-                                    if(err){
-                                        return res.status(500).send({
-                                            status:"error",
-                                            message: "No se actualizo la compra.",
-                                            err
-                                        })
-                                    }
-                                    return res.status(200).send({
-                                        status:'success',
-                                        message: "Movimiento guardado correctamente. 👍",
-                                        movimiento,
-                                        compraItem: nitem
-                                    })
-                                })
 
-                            })
-                        })
-                    })
-                })
+        let movSaved = await Movimiento.create(movimiento)
+
+        if(!movSaved){
+            return res.status(404).send({
+                status: "error",
+                message: "No se pudo crear el movimiento.",
             })
+        }
+            
+            
+            // movimiento.save((err, movimiento) => {
+            //     if(err){
+            //         conn.close()
+            //         return res.status(500).send({
+            //             status: 'error',
+            //             message: "No se pudo guardar el movimiento.",
+            //             err
+            //         })
+            //     }
+        let itmOrigen = await CompraItem.findById(data.itemsel._id)
 
+        if(!itmOrigen){
+            return res.status(404).send({
+                status: "error",
+                message: "No se encontro el item original.",
+            })
+        }
+        // .exec((err, item) => {
+        //             if(err || !item){
+        //                 return res.status(500).send({
+        //                     status: 'error',
+        //                     message: "No se encontro el item origen.",
+        //                     err
+        //                 })
+        //             }
+            itmOrigen.cantidad -= data.itemselcantidad
+            itmOrigen.stock -= data.itemselcantidad
+            itmOrigen.empaques -= data.itemselempaques
+            itmOrigen.empaquesStock -= data.itemselempaques
+            itmOrigen.importe = itmOrigen.cantidad * itmOrigen.costo
+
+        let itmOrigenUpdated = await itmOrigen.save()
+
+        if (!itmOrigenUpdated){
+            return res.status(404).send({
+                status: "error",
+                message: "No se actualizó el item origen.",
+            })
+        }
+                    // item.save((err, itemsaved) => {
+                    //     if(err){
+                    //         return res.status(500).send({
+                    //             status: 'error',
+                    //             message: "No se pudo actualizar el item origen"
+                    //         })
+                    //     }
+        // let nitem = new CompraItem()
+        let nitem = {}
+            nitem.ubicacion = data.destino
+            nitem.compra = data.itemsel.compra
+            nitem.producto = data.itemsel.producto
+            nitem.cantidad = data.itemselcantidad
+            nitem.clasificacion = data.clasificacion
+            nitem.stock = data.itemselcantidad
+            nitem.empaques = data.itemselempaques
+            nitem.empaquesStock = data.itemselempaques
+            nitem.costo = itmOrigen.costo
+            nitem.importe = nitem.cantidad * itmOrigen.costo
+
+        let nitemsaved = await CompraItem.create(nitem)
+
+        if(!nitemsaved){
+            return res.status(404).send({
+                status: "error",
+                message: "No se guardó el nuevo item.",
+            })
+        }
+
+        // nitem.save((err, nitemsaved) => {
+        //     if(err){
+        //         conn.close()
+        //         return res.status(500).send({
+        //             status: 'error',
+        //             message: "No se creó el nuevo item.",
+        //             err
+        //         })
+        //     }
+
+        let compra = await  Compra.findById(compraId)
+        if(!compra){
+            return res.status(404).send({
+                status: "error",
+                message: "No se encontró la compra.",
+            })
+        }
+            // .exec((err, compra) => {
+            //                     if(err){console.log(err)}
+            compra.items.push(nitemsaved._id)
+            compra.movimientos.push(movSaved._id)
+
+        let compraUpdated = await compra.save()
+        if(!compraUpdated){
+            return res.status(404).send({
+                status: "error",
+                message: "No se actualizó la compra.",
+            })
+        }
+        
+        let nitempopulated = await CompraItem.findOne({_id:nitemsaved._id})
+            .populate("compra ubicacion ")
+            .populate({path: 'producto',
+                select: 'nombre descripcion unidad empaque',
+                populate: {
+                    path: 'unidad empaque',
+                    select: 'abr'
+                }
+            })
+        return res.status(200).send({
+            status:'success',
+            message: "Movimiento guardado correctamente. 👍",
+            movimiento: movSaved,
+            compraItem: nitempopulated
+        })
+          
     },
 
     deleteMovimiento: async (req, res)=>{
