@@ -436,7 +436,7 @@ var controller = {
         }
         
         let nitempopulated = await CompraItem.findOne({_id:nitemsaved._id})
-            .populate("compra ubicacion ")
+            .populate("compra ubicacion producto")
             .populate({path: 'producto',
                 select: 'nombre descripcion unidad empaque',
                 populate: {
