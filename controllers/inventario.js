@@ -146,13 +146,13 @@ var controller = {
         )
             .populate('ubicacion compraItem')
 
+        conn.close()
         if(!cambios){
             return res.status(404).send({
                 status: "error",
                 message: "No se encontraron resultados. 🤷‍♂️😢",
             })
         }
-        conn.close()
         return res.status(200).send({
             status: "success",
             message: "Cambios encontrados",
@@ -302,12 +302,13 @@ var controller = {
         const Movimiento = conn.model('Movimiento')
 
         let numeroMovimientos = await Movimiento.countDocuments()
-        if(!numeroMovimientos){
-            return res.status(404).send({
-                status: "error",
-                message: "Error al numerar los movimientos",
-            })
-        }
+        // console.log(numeroMovimientos)
+        // if(!numeroMovimientos){
+        //     return res.status(404).send({
+        //         status: "error",
+        //         message: "Error al numerar los movimientos",
+        //     })
+        // }
 
         // const movimiento = new Movimiento()
         let movimiento = {}
