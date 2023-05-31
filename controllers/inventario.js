@@ -138,12 +138,9 @@ var controller = {
         const conn = await con(user) 
         const Cambio = conn.model('Cambio')
         let d = new Date(fecha)
-        var firstDay = new Date(d.getFullYear(), d.getMonth()+1, 1);
-        var lastDay = new Date(d.getFullYear(), d.getMonth() + 2, 0);
-        
-        console.log(firstDay)
-        console.log(lastDay)
-        
+        var firstDay = new Date(d.getFullYear(), d.getUTCMonth(), 1);
+        var lastDay = new Date(d.getFullYear(), d.getUTCMonth() + 1, 0);
+
         const cambios = await Cambio.find(
             {createdAt: { $gt: firstDay, $lt: lastDay }}
         )
