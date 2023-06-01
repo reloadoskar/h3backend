@@ -7,30 +7,26 @@ const controller = {
         const conn = await con(user)
         const Producto = conn.model('Producto')
 
-        let producto = new Producto();
+        let producto = data
             producto.clave = data.clave.toUpperCase();
             producto.descripcion = data.descripcion.toUpperCase();
-            producto.costo = data.costo;
-            producto.unidad = data.unidad;
-            producto.empaque = data.empaque;
-            producto.precio1 = data.precio1;
-            producto.precio2 = data.precio2;
-            producto.precio3 = data.precio3;
-
+        
             //Guardar objeto
-            producto.save((err, productoStored) => {
-                conn.close()
-                if(err || !productoStored){
-                    return res.status(500).send({
-                        status: 'error',
-                        message: 'El producto no se guardó'+err.message
-                    })
-                }
-                return res.status(200).send({
-                    status: 'success',
-                    message: 'Producto guardado correctamente.',
-                    producto: productoStored
+            let productoGuardado = await Producto.create(producto)
+            if(!productoGuardado){
+                return res.status(500).send({
+                    status: 'error',
+                    message: 'El producto no se guardó'
                 })
+            }
+
+            await productoGuardado.populate("unidad empaque")
+
+            conn.close()
+            return res.status(200).send({
+                status: 'success',
+                message: 'Producto guardado correctamente.',
+                producto: productoGuardado
             })
     },
 
