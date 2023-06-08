@@ -12,131 +12,132 @@ var controller = {
         const Egreso = conn.model('Egreso')
         const Provedor = conn.model('Provedor')
 
-        Compra.estimatedDocumentCount().then(count => {
-            var compra = new Compra();
-            compra._id = mongoose.Types.ObjectId()
-            compra.folio = count + 1
-            compra.provedor = data.provedor
-            compra.ubicacion = data.ubicacion
-            compra.tipoCompra = data.tipoCompra
-            compra.remision = data.remision
-            compra.importe = data.importe
-            compra.saldo = data.importe
-            compra.fecha = data.fecha
-            compra.status = 'ACTIVO'
+        let numerocompras = await Compra.estimatedDocumentCount()
+        // if(!numerocompras){
+        //     return res.status(401).send({status:"error", message:"No se encontraron compras 🤷‍♂️"})
+        // }
 
-            Provedor.findById(compra.provedor).exec((err, prov) => {
+        let nuevacompra = {
+            _id: mongoose.Types.ObjectId(),
+            folio: numerocompras + 1,
+            provedor: data.provedor,
+            ubicacion: data.ubicacion,
+            tipoCompra: data.tipoCompra,
+            remision: data.remision,
+            importe: data.importe,
+            saldo: data.importe,
+            fecha: data.fecha,
+            status: 'ACTIVO',
+            items: []
+        }
+
+        let provedor = await Provedor.findById(nuevacompra.provedor)
+        if(!provedor){
+            return res.status(401).send({status:"error", message:"No se encontraró el productor seleccionado 🤷‍♂️"})
+        }
+
+        let numerocomprasproductor = await Compra.countDocuments({provedor: data.provedor._id})
+        let sigientenumerocompraproductor = numerocomprasproductor + 1
+        //Posiblemente se atore en productores nuevos*****
+        // if(!numerocomprasproductor){
+        //     return res.status(401).send({status:"error", message:"No se encontraron compras del productor 🤷‍♂️"})
+        // }
+        
+        nuevacompra.clave = data.provedor.clave + "-" + sigientenumerocompraproductor
+        let i = data.items
+        let itmsToSave = []
+        i.map((item) => {
+            let compraItem = {}
+            compraItem._id = mongoose.Types.ObjectId()
+            compraItem.ubicacion = data.ubicacion
+            compraItem.clasificacion = "S/C"
+            compraItem.compra = nuevacompra._id
+            compraItem.producto = item.producto
+            compraItem.cantidad = item.cantidad
+            compraItem.stock = item.cantidad
+            compraItem.empaques = item.empaques
+            compraItem.empaquesStock = item.empaques
+            compraItem.costo = item.costo
+            compraItem.importe = item.importe
+            itmsToSave.push(compraItem)
+        })
+        nuevacompra.itemsOrigen = itmsToSave
+
+        let compraitemsguardados = await CompraItem.insertMany(itmsToSave)
+        if(!compraitemsguardados){
+            return res.status(401).send({status:"error", message:"No se guardaron los compraitems"})
+        }
+        
+        compraitemsguardados.map(itm => {
+            nuevacompra.items.push(itm._id)
+        })
+
+        let numeroegresos = await Egreso.estimatedDocumentCount()
+        
+        let g = data.gastos
+        g.map((gasto) => {
+            var egreso = new Egreso()
+            egreso._id = mongoose.Types.ObjectId()
+            egreso.folio = numeroegresos + 1
+            egreso.tipo = "COMPRA"
+            egreso.ubicacion = nuevacompra.ubicacion
+            egreso.concepto = gasto.concepto
+            egreso.descripcion = gasto.descripcion
+            egreso.fecha = nuevacompra.fecha
+            egreso.importe = 0
+            egreso.saldo = gasto.importe
+            egreso.compra = nuevacompra._id
+            nuevacompra.gastos.push(egreso._id)
+            provedor.cuentas.push(egreso._id)
+            egreso.save((err, e) => {
                 if (err) { console.log(err) }
-                // prov.cuentas.push(compra._id)
-                // prov.save()
-                Compra.countDocuments({ provedor: data.provedor._id })
-                    .then(c => {
-                        let sigCompra = c + 1
-                        compra.clave = data.provedor.clave + "-" + sigCompra
-
-                        let i = data.items
-                        let itmsToSave = []
-                        i.map((item) => {
-                            let compraItem = {}
-                            compraItem._id = mongoose.Types.ObjectId()
-                            compraItem.ubicacion = data.ubicacion
-                            compraItem.clasificacion = "S/C"
-                            compraItem.compra = compra._id
-                            compraItem.producto = item.producto
-                            compraItem.cantidad = item.cantidad
-                            compraItem.stock = item.cantidad
-                            compraItem.empaques = item.empaques
-                            compraItem.empaquesStock = item.empaques
-                            compraItem.costo = item.costo
-                            compraItem.importe = item.importe
-                            itmsToSave.push(compraItem)
-                        })
-
-                        compra.itemsOrigen = itmsToSave
-
-                        CompraItem.insertMany(itmsToSave, (err, items) => {
-                            if (err) console.log(err)
-                            items.map(itm => {
-                                compra.items.push(itm._id)
-                            })
-
-                            Egreso.estimatedDocumentCount().then(c => {
-                                let g = data.gastos
-                                let cgastos = []
-                                g.map((gasto) => {
-                                    var egreso = new Egreso()
-                                    egreso._id = mongoose.Types.ObjectId()
-                                    egreso.folio = c + 1
-                                    egreso.tipo = "COMPRA"
-                                    egreso.ubicacion = compra.ubicacion
-                                    egreso.concepto = gasto.concepto
-                                    egreso.descripcion = gasto.descripcion
-                                    egreso.fecha = compra.fecha
-                                    egreso.importe = 0
-                                    egreso.saldo = gasto.importe
-                                    egreso.compra = compra._id
-                                    compra.gastos.push(egreso._id)
-                                    prov.cuentas.push(egreso._id)
-                                    egreso.save((err, e) => {
-                                        if (err) { console.log(err) }
-                                    })
-                                })
-                                // compra.gastos.push(cgastos)
-                                compra.save((err, compraSaved) => {
-
-                                    if (err || !compraSaved) {
-                                        conn.close()
-                                        return res.status(500).send({
-                                            status: 'error',
-                                            message: 'Error al devolver la compra' + err
-                                        })
-                                    }
-                                    Egreso.estimatedDocumentCount().then(c => {
-                                        let egItm = new Egreso()
-                                        egItm._id = mongoose.Types.ObjectId()
-                                        egItm.folio = c + 1
-                                        egItm.tipo = "COMPRA"
-                                        egItm.ubicacion = compra.ubicacion
-                                        egItm.concepto = "COMPRA"
-                                        egItm.fecha = compra.fecha
-                                        egItm.importe = 0
-                                        egItm.saldo = data.importeItems
-                                        egItm.compra = compra._id
-                                        prov.cuentas.push(egItm._id)
-                                        egItm.save((err, e) => {
-                                            if (err) { console.log(err) }
-                                        })
-
-                                        prov.save()
-                                    })
-
-                                    Compra.findById(compraSaved._id)
-                                        .sort('folio')
-                                        .populate('provedor', 'nombre')
-                                        .populate('ubicacion')
-                                        .populate('tipoCompra')
-                                        .populate({
-                                            path: 'items',
-                                            populate: { path: 'producto' },
-                                        })
-                                        .populate({
-                                            path: 'items',
-                                            populate: { path: 'provedor' },
-                                        })
-                                        .exec((err, c) => {
-                                            conn.close()
-                                            return res.status(200).send({
-                                                status: 'success',
-                                                message: 'Compra registrada correctamente.',
-                                                compra: c,
-                                            })
-                                        })
-                                })
-                            })
-
-                        })
-                    })
             })
+        })
+        // compra.gastos.push(cgastos)
+
+        let compraguardada = await Compra.create(nuevacompra)
+        console.log(compraguardada)
+        if(!compraguardada){
+            return res.status(401).send({status:"error", message:"No se guardó la compra"})
+        }
+
+        let egresocompra = await Egreso.create({
+            folio: numeroegresos + 1,
+            tipo: "COMPRA",
+            ubicacion: nuevacompra.ubicacion,
+            concepto: "COMPRA",
+            fecha: nuevacompra.fecha,
+            importe: 0,
+            saldo: data.importeItems,
+            compra: nuevacompra._id,
+        })
+        if(!egresocompra){
+            return res.status(401).send({status:"error", message:"No se guardó el egreso de la compra"})
+        }
+        provedor.cuentas.push(egresocompra._id)
+            
+        let productoractualizado = await provedor.save()
+        if(!productoractualizado){
+            return res.status(401).send({status:"error", message:"No se actualizaron los datos del productor"})
+        }
+
+        let comprapopuleada = await Compra.findById(compraguardada._id)
+            .populate('provedor', 'nombre')
+            .populate('ubicacion')
+            .populate('tipoCompra')
+            .populate({
+                path: 'items',
+                populate: { path: 'producto', populate: "empaque unidad" },
+            })
+            .populate({
+                path: 'items',
+                populate: { path: 'provedor' },
+            })
+        conn.close()
+        return res.status(200).send({
+            status: 'success',
+            message: 'Compra registrada correctamente.',
+            compra: comprapopuleada,
         })
     },
 
@@ -688,6 +689,57 @@ var controller = {
             })
     },
     addMerma: async (req, res) => {
+
+    },
+    crearItemEmpaqueVacio: async (req, res) => {
+        const {user, compra, ubicacion} = req.body
+        const conn = await con(user)
+        const Compra = conn.model('Compra')
+        const CompraItem = conn.model('CompraItem')
+
+        let compraSeleccionada = await Compra.findOne({_id:compra._id})
+        if(!compraSeleccionada){
+            return res.status(401).send({
+                status: 'error',
+                message: 'No se encontró la compra.',
+            })
+        }
+        let itemEmpaqueVacio = await CompraItem.create({
+                producto:"647e0f4f9e412d82cfe9f6f7",
+                compra: compra,
+                ubicacion: ubicacion,
+                clasificacion: "S/C",
+                cantidad: 0,
+                empaques:0,
+                empaquesStock:0,
+                stock:0,
+                costo:0,
+                importe:0
+
+            })
+        if(!itemEmpaqueVacio){
+            return res.status(401).send({
+                status: 'error',
+                message: 'No se pudo crear el item.',
+            })
+        }
+
+        let itemPopuleado = await itemEmpaqueVacio.populate("producto, ubicacion")
+        compraSeleccionada.items.push(itemEmpaqueVacio._id)
+        let compraActualizada = await compraSeleccionada.save()
+
+        if(!compraActualizada){
+            return res.status(401).send({
+                status: 'error',
+                message: 'No se actualizó la compra.',
+            })
+        }
+
+        return res.status(200).send({
+            status: 'success',
+            message: 'Item creado correctamente.',
+            item: itemPopuleado
+        })
 
     }
 
