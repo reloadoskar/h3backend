@@ -5,31 +5,32 @@ const controller = {
     save: async (req, res) => {
         const {user, data} = req.body;
         let errorStatusCode=500
-        console.log("H3S> Holi, voy a guardar un cliente, comper'...")
+        // console.log("H3S> Holi, voy a guardar un cliente, comper'...")
         try {
             const conn = await con(user)
             if(!conn){
                 errorStatusCode=401
                 conn.close()
-                throw new Error("Ash!! No me pudo conectar. 💀")
+                throw new Error("Error de conexión. 💀")
             }
             const Cliente = conn.model('Cliente')
-            console.log("H3S> Creando cliente...")
+            // console.log("H3S> Creando cliente...")
             let nuevoCliente = await Cliente.create(data)
             if(!nuevoCliente){
                 errorStatusCode=401
                 conn.close()
-                throw new Error('NOUP!, no se guardo el cliente. 💀🤔')
+                throw new Error('No se guardo el cliente. 💀🤔')
             }
-            console.log("H3S> Yastuvooo 🤖")
+            // console.log("H3S> Yastuvooo 🤖")
             conn.close()
             return res.status(200).send({
                 status: 'success',
                 message: 'Cliente guardado correctamente.',
-                cliente: nuevoCliente            })
+                cliente: nuevoCliente
+            })
             
         } catch (error) {
-            console.log("H3S> Cómo de que no puedo hacerlo ahora?!! ❌")
+            console.log("H3S> No se pudo guardar. ❌")
             return res.status(errorStatusCode).send({
                 status: 'error',
                 message: 'El cliente no se guardó: '+error.message,
@@ -105,26 +106,23 @@ const controller = {
         const {user, data} = req.body;
         const conn = await con(user)
         const Cliente = conn.model('Cliente')
-            // Find and update
-            // console.log(data)
-        Cliente
-            .findOneAndUpdate({_id: data._id}, data, { new: true } )
-            .then( updatd => {
-                conn.close()
-                return res.status(200).send({
-                    status: 'success',
-                    message: "Actualizado correctamente",
-                    cliente: updatd
-                })
+
+        let clienteUpdated = await Cliente.findOneAndUpdate({_id: data._id}, data, { new: true } )
+
+        if(!clienteUpdated){
+            conn.close()
+            return res.status(401).send({
+                status: "error",
+                message: "No se pudo actualizar."
             })
-            .catch(err => {
-                conn.close()
-                return res.status(401).send({
-                    status: 'error',
-                    message: "No se pudo actualizar " + err.message,
-                    err
-                })
-            })                
+        }
+
+        conn.close()
+        return res.status(200).send({
+            status: 'success',
+            message: "Actualizado correctamente",
+            cliente: clienteUpdated
+        })
     },
 
     delete: async (req, res) => {
