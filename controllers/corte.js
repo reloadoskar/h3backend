@@ -39,7 +39,7 @@ var controller = {
                 const ventaItems = await VentaItem.find({ubicacion: ubicacion, fecha: fecha})
                     .populate({path:'venta',select: 'ubicacion folio cliente pesadas fecha tipoPago acuenta', populate:{path:'cliente',select: 'nombre'}})
                     .populate({path:'venta',populate:{path:'ubicacion',select: 'nombre'}})
-                    .populate({path:'compra', select: 'folio'})
+                    .populate({path:'compra', select: 'folio clave'})
                     .populate({path:'compraItem', select: 'compra producto clasificacion stock cantidad empaquesStock empaques createdAt', populate:{path:'producto', select: 'descripcion empaque unidad', populate:'empaque unidad'}})
                     .populate({path:'producto', select: 'descripcion empaque unidad'})
                 corte.ventaItems = ventaItems
@@ -51,7 +51,7 @@ var controller = {
                     .populate({path:'ubicacion', select: 'nombre direccion telefono'})
                     .populate({path:'cliente', select:'nombre'})
                     .populate({path:'items', select: 'compra compraItem pesadas', 
-                        populate: {path: 'compra', select: 'folio'}})
+                        populate: {path: 'compra', select: 'folio clave'}})
                     .populate({path:'items', 
                         populate: {path: 'compraItem', select: 'clasificacion producto', populate:{path:'producto', select:'descripcion'}}})
 
