@@ -5,7 +5,7 @@ const con = require('../src/dbuser')
 
 var controller = {
     save: async (req, res) => {
-        const {user, data} = req.body;
+        const { user, data } = req.body;
         const conn = await con(user)
         const Compra = conn.model('Compra')
         const CompraItem = conn.model('CompraItem')
@@ -13,10 +13,6 @@ var controller = {
         const Provedor = conn.model('Provedor')
 
         let numerocompras = await Compra.estimatedDocumentCount()
-        // if(!numerocompras){
-        //     return res.status(401).send({status:"error", message:"No se encontraron compras 🤷‍♂️"})
-        // }
-
         let nuevacompra = {
             _id: mongoose.Types.ObjectId(),
             folio: numerocompras + 1,
@@ -32,17 +28,14 @@ var controller = {
         }
 
         let provedor = await Provedor.findById(nuevacompra.provedor)
-        if(!provedor){
-            return res.status(401).send({status:"error", message:"No se encontraró el productor seleccionado 🤷‍♂️"})
+        if (!provedor) {
+            conn.close()
+            return res.status(401).send({ status: "error", message: "No se encontraró el productor seleccionado 🤷‍♂️" })
         }
 
-        let numerocomprasproductor = await Compra.countDocuments({provedor: data.provedor._id})
+        let numerocomprasproductor = await Compra.countDocuments({ provedor: data.provedor._id })
         let sigientenumerocompraproductor = numerocomprasproductor + 1
-        //Posiblemente se atore en productores nuevos*****
-        // if(!numerocomprasproductor){
-        //     return res.status(401).send({status:"error", message:"No se encontraron compras del productor 🤷‍♂️"})
-        // }
-        
+
         nuevacompra.clave = data.provedor.clave + "-" + sigientenumerocompraproductor
         let i = data.items
         let itmsToSave = []
@@ -64,16 +57,17 @@ var controller = {
         nuevacompra.itemsOrigen = itmsToSave
 
         let compraitemsguardados = await CompraItem.insertMany(itmsToSave)
-        if(!compraitemsguardados){
-            return res.status(401).send({status:"error", message:"No se guardaron los compraitems"})
+        if (!compraitemsguardados) {
+            conn.close()
+            return res.status(401).send({ status: "error", message: "No se guardaron los compraitems" })
         }
-        
+
         compraitemsguardados.map(itm => {
             nuevacompra.items.push(itm._id)
         })
 
         let numeroegresos = await Egreso.estimatedDocumentCount()
-        
+
         let g = data.gastos
         g.map((gasto) => {
             var egreso = new Egreso()
@@ -93,12 +87,11 @@ var controller = {
                 if (err) { console.log(err) }
             })
         })
-        // compra.gastos.push(cgastos)
 
         let compraguardada = await Compra.create(nuevacompra)
-        console.log(compraguardada)
-        if(!compraguardada){
-            return res.status(401).send({status:"error", message:"No se guardó la compra"})
+        if (!compraguardada) {
+            conn.close()
+            return res.status(401).send({ status: "error", message: "No se guardó la compra" })
         }
 
         let egresocompra = await Egreso.create({
@@ -111,14 +104,16 @@ var controller = {
             saldo: data.importeItems,
             compra: nuevacompra._id,
         })
-        if(!egresocompra){
-            return res.status(401).send({status:"error", message:"No se guardó el egreso de la compra"})
+        if (!egresocompra) {
+            conn.close()
+            return res.status(401).send({ status: "error", message: "No se guardó el egreso de la compra" })
         }
         provedor.cuentas.push(egresocompra._id)
-            
+
         let productoractualizado = await provedor.save()
-        if(!productoractualizado){
-            return res.status(401).send({status:"error", message:"No se actualizaron los datos del productor"})
+        if (!productoractualizado) {
+            conn.close()
+            return res.status(401).send({ status: "error", message: "No se actualizaron los datos del productor" })
         }
 
         let comprapopuleada = await Compra.findById(compraguardada._id)
@@ -142,51 +137,39 @@ var controller = {
     },
 
     getComprasActivas: async (req, res) => {
-        const bd = req.params.bd
-        const conexion = await con(bd)
-        try {
-            const Compra = conexion.model('Compra')
-            const resp = await Compra
-                .find({ status: "ACTIVO" })
-                .select("folio clave saldo status")
-                .sort('folio')
-                .lean()
-                .then(compras => {
-                    conexion.close()
-                    return res.status(200).send({
-                        status: 'success',
-                        compras: compras
-                    })
-                })
-                .catch(err => {
-                    conexion.close()
-                    return res.status(500).send({
-                        status: 'error',
-                        message: 'Error al devolver los compras' + err
-                    })
-                })
-        } catch (error) {
-            console.log(error)
+        const { user, data } = req.body
+        const conexion = await con(user)
+
+        const Compra = conexion.model('Compra')
+        const comprasActivas = await Compra
+            .find({ status: "ACTIVO" })
+            .select("folio clave saldo status")
+            .sort('folio')
+
+        if (!comprasActivas) {
             conexion.close()
             return res.status(500).send({
                 status: 'error',
                 message: 'Error al devolver los compras' + err
             })
         }
+
+        conexion.close()
+        return res.status(200).send({
+            status: 'success',
+            compras: comprasActivas
+        })
     },
 
     getCompras: async (req, res) => {
-        const {user, mesAnio} = req.body
+        const { user, mesAnio } = req.body
         const conn = await con(user)
         const Compra = conn.model('Compra')
         const Liquidacion = conn.model('Liquidacion')
-        const compra = await Compra
+        const compras = await Compra
             .find({
                 fecha: { $gt: mesAnio + "-00", $lt: mesAnio + "-32" }
-                // fecha: { $gt: year + "-" + mes + "-00", $lt: year + "-" + mes + "-32" }
             })
-            .sort('folio')
-            // .lean()
             .populate('provedor', 'nombre diasDeCredito comision email cta1 tel1')
             .populate('ubicacion')
             .populate('tipoCompra')
@@ -200,27 +183,25 @@ var controller = {
             })
             .populate({
                 path: 'items',
-                populate: { path: 'producto', populate: { path: 'unidad' } },
+                populate: { path: 'producto', populate: { path: 'unidad empaque' } },
             })
-            .populate({
-                path: 'items',
-                populate: { path: 'producto', populate: { path: 'empaque' } },
-            })
-            .populate('gastos')
+            // .populate({
+            //     path: 'items',
+            //     populate: { path: 'producto', populate: { path: 'empaque' } },
+            // })
             .populate({
                 path: 'gastos',
-                populate: { path: 'ubicacion'},
+                populate: { path: 'ubicacion' },
             })
-            .populate('pagos')
             .populate({
                 path: 'pagos',
-                populate: { path: 'ubicacion'},
+                populate: { path: 'ubicacion' },
             })
-            .populate('ventaItems')
             .populate({
                 path: 'ventaItems',
-                populate: { path: 'venta',
-                    populate: {path: 'cliente'} 
+                populate: {
+                    path: 'venta',
+                    populate: { path: 'cliente' }
                 },
             })
             .populate({
@@ -229,35 +210,38 @@ var controller = {
             })
             .populate({
                 path: 'ventaItems',
-                populate: { path: 'producto',
-                    populate: { path: 'unidad'},
-                    populate: { path: 'empaque'}
+                populate: { path: 'compra', select: 'folio fecha clave' },
+            })
+            .populate({
+                path: 'ventaItems',
+                populate: {
+                    path: 'producto',
+                    populate: { path: 'unidad' },
+                    populate: { path: 'empaque' }
                 }
             })
             .populate({
                 path: 'ventaItems',
-                populate: { path: 'compraItem', select: 'clasificacion '}
+                populate: { path: 'compraItem', select: 'clasificacion createdAt empaques' }
             })
-            // compra.liquidacion = await Liquidacion.find({compra: compra._id})
-            // console.log(compra)
-            .then(compras => {
-                conn.close()
-                return res.status(200).send({
-                    status: 'success',
-                    compras: compras
-                })
-            })
-            .catch(err => {
-                conn.close()
-                return res.status(500).send({
-                    status: 'error',
-                    message: 'Error al devolver los compras' + err
-                })
+            .sort('folio')
+
+            if(!compras){
+             conn.close()
+             return res.status(401).send({
+                status: 'error',
+                message: 'Error al devolver los compras' + err
+             })   
+            }
+            conn.close()
+            return res.status(200).send({
+                status: 'success',
+                compras: compras
             })
     },
 
     getComprasProvedor: async (req, res) => {
-        const {user, mes, year} = req.body        
+        const { user, mes, year } = req.body
         if (mes < 10) {
             mes = "0" + mes
         }
@@ -265,35 +249,36 @@ var controller = {
         const Compra = conn.model('Compra')
 
         const resp = await Compra.aggregate([
-            {$match: { fecha: { $gt: year + "-" + mes + "-00", $lt: year + "-" + mes + "-32" } }},
-            {$group: { 
-                _id: "$provedor", 
-                provedor: { $first: "$provedor" }, 
-                saldo: { $sum: "$saldo" }, 
-                importe: { $sum: "$importe" }  
-                } 
+            { $match: { fecha: { $gt: year + "-" + mes + "-00", $lt: year + "-" + mes + "-32" } } },
+            {
+                $group: {
+                    _id: "$provedor",
+                    provedor: { $first: "$provedor" },
+                    saldo: { $sum: "$saldo" },
+                    importe: { $sum: "$importe" }
+                }
             },
-            {$lookup: { from: "provedors", localField: "provedor", foreignField: "_id", as: "provedor" } },
-            { $unwind: "$provedor"},
+            { $lookup: { from: "provedors", localField: "provedor", foreignField: "_id", as: "provedor" } },
+            { $unwind: "$provedor" },
         ])
-        .then(compras => {
-            conn.close()
-            return res.status(200).send({
-                status: "success",
-                compras: compras
+            .then(compras => {
+                conn.close()
+                return res.status(200).send({
+                    status: "success",
+                    compras: compras
+                })
             })
-        })
-        .catch(err=>{
-            conn.close()
-            return res.status(200).send({
-                status: "error",
-                message: "error: "+err
+            .catch(err => {
+                conn.close()
+                return res.status(200).send({
+                    status: "error",
+                    message: "error: " + err
+                })
             })
-        })
     },
 
     getCompra: async (req, res) => {
-        const {user, id} = req.body
+        const { user, id } = req.body
         const conn = await con(user)
         const Compra = conn.model('Compra')
         const VentaItem = conn.model('VentaItem')
@@ -302,27 +287,81 @@ var controller = {
 
         const compra = await Compra
             .findById(id)
-            .populate('provedor', 'clave nombre tel1 cta1 email diasDeCredito comision')
-            .populate('gastos')
+            .populate('provedor', 'nombre diasDeCredito comision email cta1 tel1')
             .populate('ubicacion')
             .populate('tipoCompra')
-            .populate('ventas')
-            .populate({
-                path: 'items',
-                populate: { path: 'ubicacion' },
-            })
             .populate({
                 path: 'items',
                 populate: { path: 'producto' },
             })
             .populate({
                 path: 'items',
-                populate: { path: 'producto', populate: { path: 'unidad' } },
+                populate: { path: 'ubicacion' },
             })
             .populate({
                 path: 'items',
-                populate: { path: 'producto', populate: { path: 'empaque' } },
+                populate: { path: 'producto', populate: { path: 'unidad empaque' } },
             })
+            // .populate({
+            //     path: 'items',
+            //     populate: { path: 'producto', populate: { path: 'empaque' } },
+            // })
+            .populate({
+                path: 'gastos',
+                populate: { path: 'ubicacion' },
+            })
+            .populate({
+                path: 'pagos',
+                populate: { path: 'ubicacion' },
+            })
+            .populate({
+                path: 'ventaItems',
+                populate: {
+                    path: 'venta',
+                    populate: { path: 'cliente' }
+                },
+            })
+            .populate({
+                path: 'ventaItems',
+                populate: { path: 'ubicacion' },
+            })
+            .populate({
+                path: 'ventaItems',
+                populate: { path: 'compra', select: 'folio fecha clave' },
+            })
+            .populate({
+                path: 'ventaItems',
+                populate: {
+                    path: 'producto',
+                    populate: { path: 'unidad' },
+                    populate: { path: 'empaque' }
+                }
+            })
+            .populate({
+                path: 'ventaItems',
+                populate: { path: 'compraItem', select: 'clasificacion createdAt empaques' }
+            })
+            // .populate('provedor', 'clave nombre tel1 cta1 email diasDeCredito comision')
+            // .populate('gastos')
+            // .populate('ubicacion')
+            // .populate('tipoCompra')
+            // .populate('ventas')
+            // .populate({
+            //     path: 'items',
+            //     populate: { path: 'ubicacion' },
+            // })
+            // .populate({
+            //     path: 'items',
+            //     populate: { path: 'producto' },
+            // })
+            // .populate({
+            //     path: 'items',
+            //     populate: { path: 'producto', populate: { path: 'unidad' } },
+            // })
+            // .populate({
+            //     path: 'items',
+            //     populate: { path: 'producto', populate: { path: 'empaque' } },
+            // })
             .lean()
             .catch(err => {
                 conn.close()
@@ -402,35 +441,40 @@ var controller = {
     },
 
     close: async (req, res) => {
-        const compraId = req.params.id
-        const bd = req.params.bd
-        const conn = await con(bd)
+        const { user, id } = req.body
+        console.log("cerrando compra...")
+        const conn = await con(user)
+        if(!conn){
+            return res.status(401).send({
+                status: "error",
+                message: "No se logro establecer la conexión."
+            })
+        }
         const Compra = conn.model('Compra')
-        const resp = await Compra
-            .findOneAndUpdate({ _id: compraId }, { status: "CERRADO" })
-            .then(compraUpdated => {
-                conn.close()
-                return res.status(200).send({
-                    status: 'success',
-                    message: 'Compra cerrada correctamente.',
-                    compra: compraUpdated
-                })
+        
+        const compraCerrada = await Compra
+            .findOneAndUpdate({ _id: id }, { status: "CERRADO" })
+        if(!compraCerrada){
+            conn.close()
+            return res.status(404).send({
+                status: "error",
+                message: "Error: " + err
             })
-            .catch(err => {
-                conn.close()
-                return res.status(404).send({
-                    status: "error",
-                    message: "Error: " + err
-                })
-            })
+        }
+        conn.close()
+        return res.status(200).send({
+            status: 'success',
+            message: 'Compra cerrada correctamente.',
+            compra: compraCerrada
+        })
     },
 
     update: async (req, res) => {
-        const {user, data} = req.body
+        const { user, data } = req.body
         const conn = await con(user)
         const Compra = conn.model('Compra')
         Compra
-            .findOneAndUpdate({"_id": data._id}, data, { new: true }, (err, compraUpdated) => {
+            .findOneAndUpdate({ "_id": data._id }, data, { new: true }, (err, compraUpdated) => {
                 conn.close()
                 if (err) {
                     return res.status(500).send({
@@ -460,23 +504,23 @@ var controller = {
         const CompraItem = conn.model('CompraItem')
         const VentaItem = conn.model('VentaItem')
 
-        const itemsStatus = await CompraItem.deleteMany({compra: compraId})
-            .catch((err)=>{
+        const itemsStatus = await CompraItem.deleteMany({ compra: compraId })
+            .catch((err) => {
                 return res.status(200).send({
                     status: "error",
-                    message: "No se pudo cancelar los items de la compra "+err,
-                })
-            })
-        
-        const ventasStatus = await VentaItem.deleteMany({compra: compraId})
-            .catch((err)=>{
-                return res.status(200).send({
-                    status: "error",
-                    message: "No se pudo cancelar los items de las ventas "+err,
+                    message: "No se pudo cancelar los items de la compra " + err,
                 })
             })
 
-        const compraStatus = await Compra.findOneAndUpdate({ _id: compraId },{ status: "CANCELADO", saldo: 0, importe:0, ventas:[], pagos:[], ventaItems: [] }, (err, compraUpdated) => {
+        const ventasStatus = await VentaItem.deleteMany({ compra: compraId })
+            .catch((err) => {
+                return res.status(200).send({
+                    status: "error",
+                    message: "No se pudo cancelar los items de las ventas " + err,
+                })
+            })
+
+        const compraStatus = await Compra.findOneAndUpdate({ _id: compraId }, { status: "CANCELADO", saldo: 0, importe: 0, ventas: [], pagos: [], ventaItems: [] }, (err, compraUpdated) => {
             conn.close()
             // if (!compraRemoved) {
             //     return res.status(500).send({
@@ -583,7 +627,7 @@ var controller = {
     },
 
     updateCompraItem: async (req, res) => {
-        const {user, data} = req.body;
+        const { user, data } = req.body;
         const conn = await con(user)
         const CompraItem = conn.model('CompraItem')
 
@@ -692,32 +736,32 @@ var controller = {
 
     },
     crearItemEmpaqueVacio: async (req, res) => {
-        const {user, compra, ubicacion} = req.body
+        const { user, compra, ubicacion } = req.body
         const conn = await con(user)
         const Compra = conn.model('Compra')
         const CompraItem = conn.model('CompraItem')
 
-        let compraSeleccionada = await Compra.findOne({_id:compra._id})
-        if(!compraSeleccionada){
+        let compraSeleccionada = await Compra.findOne({ _id: compra._id })
+        if (!compraSeleccionada) {
             return res.status(401).send({
                 status: 'error',
                 message: 'No se encontró la compra.',
             })
         }
         let itemEmpaqueVacio = await CompraItem.create({
-                producto:"647e0f4f9e412d82cfe9f6f7",
-                compra: compra,
-                ubicacion: ubicacion,
-                clasificacion: "S/C",
-                cantidad: 0,
-                empaques:0,
-                empaquesStock:0,
-                stock:0,
-                costo:0,
-                importe:0
+            producto: "647e0f4f9e412d82cfe9f6f7",
+            compra: compra,
+            ubicacion: ubicacion,
+            clasificacion: "S/C",
+            cantidad: 0,
+            empaques: 0,
+            empaquesStock: 0,
+            stock: 0,
+            costo: 0,
+            importe: 0
 
-            })
-        if(!itemEmpaqueVacio){
+        })
+        if (!itemEmpaqueVacio) {
             return res.status(401).send({
                 status: 'error',
                 message: 'No se pudo crear el item.',
@@ -728,7 +772,7 @@ var controller = {
         compraSeleccionada.items.push(itemEmpaqueVacio._id)
         let compraActualizada = await compraSeleccionada.save()
 
-        if(!compraActualizada){
+        if (!compraActualizada) {
             return res.status(401).send({
                 status: 'error',
                 message: 'No se actualizó la compra.',
