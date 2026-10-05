@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 
 const con = require('../src/dbuser')
+const { parsePagination, pageResult } = require('../src/pagination')
 
 var controller = {
     save: async (req, res) => {
@@ -162,82 +163,137 @@ var controller = {
     },
 
     getCompras: async (req, res) => {
-        const { user, mesAnio } = req.body
-        const conn = await con(user)
-        const Compra = conn.model('Compra')
-        const Liquidacion = conn.model('Liquidacion')
-        const compras = await Compra
-            .find({
-                fecha: { $gt: mesAnio + "-00", $lt: mesAnio + "-32" }
-            })
-            .populate('provedor', 'nombre diasDeCredito comision email cta1 tel1')
-            .populate('ubicacion')
-            .populate('tipoCompra')
-            .populate({
-                path: 'items',
-                populate: { path: 'producto' },
-            })
-            .populate({
-                path: 'items',
-                populate: { path: 'ubicacion' },
-            })
-            .populate({
-                path: 'items',
-                populate: { path: 'producto', populate: { path: 'unidad empaque' } },
-            })
-            // .populate({
-            //     path: 'items',
-            //     populate: { path: 'producto', populate: { path: 'empaque' } },
-            // })
-            .populate({
-                path: 'gastos',
-                populate: { path: 'ubicacion' },
-            })
-            .populate({
-                path: 'pagos',
-                populate: { path: 'ubicacion' },
-            })
-            .populate({
-                path: 'ventaItems',
-                populate: {
-                    path: 'venta',
-                    populate: { path: 'cliente' }
-                },
-            })
-            .populate({
-                path: 'ventaItems',
-                populate: { path: 'ubicacion' },
-            })
-            .populate({
-                path: 'ventaItems',
-                populate: { path: 'compra', select: 'folio fecha clave' },
-            })
-            .populate({
-                path: 'ventaItems',
-                populate: {
-                    path: 'producto',
-                    populate: { path: 'unidad' },
-                    populate: { path: 'empaque' }
+        const { user, mesAnio, pagination, includeTotals = true } = req.body
+        if(!/^\d{4}-\d{2}$/.test(mesAnio || '')){
+            return res.status(400).send({status: 'error', message: 'Debe indicar un periodo válido con formato YYYY-MM.'})
+        }
+
+        let conn
+        try{
+            const {limit, cursor} = parsePagination(pagination)
+            conn = await con(user)
+            const Compra = conn.model('Compra')
+            const filter = {fecha: {$gt: mesAnio + '-00', $lt: mesAnio + '-32'}}
+
+            if(cursor){
+                if(!Number.isFinite(Number(cursor.folio)) || !mongoose.Types.ObjectId.isValid(cursor.id)){
+                    return res.status(400).send({status: 'error', message: 'El cursor de paginación no es válido.'})
+                }
+                filter.$and = [{
+                    $or: [
+                        {folio: {$gt: Number(cursor.folio)}},
+                        {folio: Number(cursor.folio), _id: {$gt: mongoose.Types.ObjectId(cursor.id)}}
+                    ]
+                }]
+            }
+
+            const listQuery = Compra
+                .find(filter)
+                .select('folio clave provedor ubicacion tipoCompra fecha remision saldo status importe createdAt')
+                .populate('provedor', 'nombre diasDeCredito comision')
+                .populate('ubicacion', 'nombre tipo')
+                .populate('tipoCompra', 'tipo nombre')
+                .sort({folio: 1, _id: 1})
+                .limit(limit + 1)
+                .lean()
+
+            const CompraItem = conn.model('CompraItem')
+            const Egreso = conn.model('Egreso')
+            const VentaItem = conn.model('VentaItem')
+            const documents = await listQuery
+            const page = pageResult(documents, limit, compra => ({folio: compra.folio, id: compra._id}))
+            const purchaseIds = page.items.map(compra => compra._id)
+
+            const [itemRows, expenseRows, saleRows] = purchaseIds.length ? await Promise.all([
+                CompraItem.aggregate([
+                    {$match: {compra: {$in: purchaseIds}}},
+                    {$group: {
+                        _id: '$compra',
+                        itemCount: {$sum: 1},
+                        stock: {$sum: {$ifNull: ['$stock', 0]}},
+                        empaquesStock: {$sum: {$ifNull: ['$empaquesStock', 0]}}
+                    }}
+                ]),
+                Egreso.aggregate([
+                    {$match: {compra: {$in: purchaseIds}}},
+                    {$group: {
+                        _id: '$compra',
+                        totalGastos: {$sum: {$cond: [{$eq: ['$tipo', 'PAGO']}, 0, {$ifNull: ['$importe', 0]}]}},
+                        totalPagos: {$sum: {$cond: [{$eq: ['$tipo', 'PAGO']}, {$ifNull: ['$importe', 0]}, 0]}}
+                    }}
+                ]),
+                VentaItem.aggregate([
+                    {$match: {compra: {$in: purchaseIds}}},
+                    {$group: {_id: '$compra', totalVenta: {$sum: {$ifNull: ['$importe', 0]}}}}
+                ])
+            ]) : [[], [], []]
+
+            const toMap = rows => new Map(rows.map(row => [String(row._id), row]))
+            const itemMap = toMap(itemRows)
+            const expenseMap = toMap(expenseRows)
+            const saleMap = toMap(saleRows)
+            page.items = page.items.map(compra => {
+                const key = String(compra._id)
+                const itemSummary = itemMap.get(key) || {}
+                const expenseSummary = expenseMap.get(key) || {}
+                const saleSummary = saleMap.get(key) || {}
+                return {
+                    ...compra,
+                    itemCount: Number(itemSummary.itemCount || 0),
+                    stock: Number(itemSummary.stock || 0),
+                    empaquesStock: Number(itemSummary.empaquesStock || 0),
+                    totalGastos: Number(expenseSummary.totalGastos || 0),
+                    totalPagos: Number(expenseSummary.totalPagos || 0),
+                    totalVenta: Number(saleSummary.totalVenta || 0)
                 }
             })
-            .populate({
-                path: 'ventaItems',
-                populate: { path: 'compraItem', select: 'clasificacion createdAt empaques' }
-            })
-            .sort('folio')
 
-            if(!compras){
-             conn.close()
-             return res.status(401).send({
-                status: 'error',
-                message: 'Error al devolver los compras' + err
-             })   
+            let totals = null
+            if(includeTotals !== false){
+                const periodPurchases = await Compra
+                    .find({fecha: {$gt: mesAnio + '-00', $lt: mesAnio + '-32'}})
+                    .select('_id importe')
+                    .lean()
+                const periodIds = periodPurchases.map(compra => compra._id)
+                const [expenseTotals, saleTotals] = periodIds.length ? await Promise.all([
+                    Egreso.aggregate([
+                        {$match: {compra: {$in: periodIds}}},
+                        {$group: {
+                            _id: null,
+                            gastos: {$sum: {$cond: [{$eq: ['$tipo', 'PAGO']}, 0, {$ifNull: ['$importe', 0]}]}},
+                            pagos: {$sum: {$cond: [{$eq: ['$tipo', 'PAGO']}, {$ifNull: ['$importe', 0]}, 0]}}
+                        }}
+                    ]),
+                    VentaItem.aggregate([
+                        {$match: {compra: {$in: periodIds}}},
+                        {$group: {_id: null, venta: {$sum: {$ifNull: ['$importe', 0]}}}}
+                    ])
+                ]) : [[], []]
+                totals = {
+                    operations: periodPurchases.length,
+                    costo: periodPurchases.reduce((sum, compra) => sum + Number(compra.importe || 0), 0),
+                    venta: Number(saleTotals[0] && saleTotals[0].venta || 0),
+                    gastos: Number(expenseTotals[0] && expenseTotals[0].gastos || 0),
+                    pagos: Number(expenseTotals[0] && expenseTotals[0].pagos || 0)
+                }
+                totals.resultado = totals.venta - totals.costo - totals.gastos
             }
-            conn.close()
+
             return res.status(200).send({
                 status: 'success',
-                compras: compras
+                compras: page.items,
+                pagination: page.pagination,
+                totals
             })
+        }catch(err){
+            const statusCode = err.statusCode || 500
+            return res.status(statusCode).send({
+                status: 'error',
+                message: statusCode === 400 ? err.message : 'No fue posible consultar las compras.'
+            })
+        }finally{
+            if(conn) await conn.close().catch(() => {})
+        }
     },
 
     getComprasProvedor: async (req, res) => {
@@ -333,8 +389,10 @@ var controller = {
                 path: 'ventaItems',
                 populate: {
                     path: 'producto',
-                    populate: { path: 'unidad' },
-                    populate: { path: 'empaque' }
+                    populate: [
+                        { path: 'unidad' },
+                        { path: 'empaque' }
+                    ]
                 }
             })
             .populate({

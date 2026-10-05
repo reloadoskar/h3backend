@@ -1,6 +1,7 @@
 'use strict'
 const mongoose = require('mongoose')
 const con = require('../src/dbuser')
+const { parsePagination, pageResult } = require('../src/pagination')
 var controller = {
     getInventario: async (req, res) => {
         const user = req.body
@@ -277,20 +278,63 @@ var controller = {
     },
 
     getMovimientos: async (req, res) => {
-        const {user, month} = req.body
-        const conn = await con(user)        
-        const Movimiento = conn.model('Movimiento')
+        const {user, fecha, month, pagination} = req.body
+        const selectedDate = fecha || month
 
-        const movimientos = Movimiento.find({fecha: month}).sort({'createdAt': -1})
-            .then(movs=>{
-                conn.close()
-                return res.status(200).send({
-                    status: "success",
-                    message: "Movimientos encontrados",
-                    movimientos: movs 
-                })
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate || '')){
+            return res.status(400).send({
+                status: 'error',
+                message: 'Debe indicar una fecha válida con formato YYYY-MM-DD.'
             })
+        }
 
+        let conn
+        try{
+            const {limit, cursor} = parsePagination(pagination)
+            conn = await con(user)
+            const Movimiento = conn.model('Movimiento')
+            const filter = {fecha: selectedDate}
+
+            if(cursor){
+                if(!cursor.createdAt || !mongoose.Types.ObjectId.isValid(cursor.id)){
+                    return res.status(400).send({status: 'error', message: 'El cursor de paginación no es válido.'})
+                }
+                const cursorDate = new Date(cursor.createdAt)
+                if(Number.isNaN(cursorDate.getTime())){
+                    return res.status(400).send({status: 'error', message: 'El cursor de paginación no es válido.'})
+                }
+                filter.$or = [
+                    {createdAt: {$lt: cursorDate}},
+                    {createdAt: cursorDate, _id: {$lt: mongoose.Types.ObjectId(cursor.id)}}
+                ]
+            }
+
+            const documents = await Movimiento
+                .find(filter)
+                .sort({createdAt: -1, _id: -1})
+                .limit(limit + 1)
+                .lean()
+
+            const page = pageResult(documents, limit, mov => ({
+                createdAt: mov.createdAt,
+                id: mov._id
+            }))
+
+            return res.status(200).send({
+                status: 'success',
+                message: 'Movimientos encontrados',
+                movimientos: page.items,
+                pagination: page.pagination
+            })
+        }catch(err){
+            const statusCode = err.statusCode || 500
+            return res.status(statusCode).send({
+                status: 'error',
+                message: statusCode === 400 ? err.message : 'No fue posible consultar los movimientos.'
+            })
+        }finally{
+            if(conn) await conn.close().catch(() => {})
+        }
     },
     
     moveInventario: async (req, res) => {

@@ -23,4 +23,7 @@ var VentaItemSchema = Schema({
 },{
     timestamps: true
 });
+
+VentaItemSchema.index({compra: 1})
+
 module.exports = VentaItemSchema

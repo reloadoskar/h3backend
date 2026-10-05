@@ -20,6 +20,8 @@ var EgresoSchema = Schema({
     timestamps: true
 });
 
+EgresoSchema.index({compra: 1})
+
 EgresoSchema.statics.egresosDelDia = function(fecha){
     return new Promise((resolve, reject) => {
         this.find({fecha: fecha})

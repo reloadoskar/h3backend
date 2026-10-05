@@ -276,30 +276,32 @@ const controller = {
     login: async (req, res) => {
         const {usuario, password} = req.body
         let errorStatusCode = 500;
+        let conn = null
+        let newConn = null
         try{
             console.log("Conenctando...")
-            const conn = await conexion_app()
+            conn = await conexion_app()
         if(!conn){
-            errorStatusCode="401"
-            throw new Error('Error al conectar a la bd')
+            errorStatusCode = 503
+            throw new Error('No fue posible conectar con la base de datos.')
         }
         const Usuario = conn.model('User')
         console.log("Buscando usuario...")
         const existingUser = await Usuario.findOne({ email: usuario });
         if (existingUser == null) {
             errorStatusCode = 401;
-            throw new Error(`Usuario y password invalidos`);
+            throw new Error('Usuario o contraseña incorrectos.');
         }
         const isMatch = await bcrypt.compareSync(password, existingUser.password);
         if (!isMatch) {
             errorStatusCode = 401;
-            throw new Error(`Password incorrecto`);
+            throw new Error('Usuario o contraseña incorrectos.');
         }
         console.log("Conectando a la BD del usuario...")
-        const newConn = await con(existingUser)
+        newConn = await con(existingUser)
         if(!newConn){
-            errorStatusCode="401"
-            throw new Error('Error al cambiar la bd')
+            errorStatusCode = 503
+            throw new Error('No fue posible conectar con la base de datos del usuario.')
         }
 
         const Empleado = newConn.model('Empleado', require('../schemas/empleado'))
@@ -307,8 +309,8 @@ const controller = {
         console.log("=> Recopilando datos del usuario en su database...")
         const empleado = await Empleado.findById(existingUser._id).populate("ubicacion")
         if(!empleado){
-        errorStatusCode = 401
-        throw new Error('No se encontro el No. de empleado.')
+        errorStatusCode = 403
+        throw new Error('La cuenta no tiene un perfil de empleado asociado.')
         }
 
         const payload = {
@@ -330,8 +332,6 @@ const controller = {
             throw new Error('No se genero el token.')
         }
         console.log("Token generado, Bienvenido. 🤜🤛")
-        conn.close()
-        newConn.close()
         return res.status(200).send({
             status: 'success',
             message: 'Bienvenido '+payload.nombre,
@@ -340,11 +340,23 @@ const controller = {
 
         }catch(err){
             console.log(err)
-            return res.status(500).send({
+            const isDatabaseError = err && (
+                err.name === 'MongooseServerSelectionError' ||
+                err.name === 'MongoServerSelectionError' ||
+                err.name === 'MongoNetworkError'
+            )
+            const responseStatus = isDatabaseError ? 503 : errorStatusCode
+            const message = isDatabaseError
+                ? 'No fue posible conectar con la base de datos. Intente nuevamente.'
+                : (responseStatus < 500 ? err.message : 'No fue posible iniciar sesión. Intente nuevamente.')
+
+            return res.status(responseStatus).send({
                 status: "error",
-                message: "No hay conectividad con la red.",
-                err
+                message
             })
+        }finally{
+            if(conn) await conn.close().catch(() => {})
+            if(newConn) await newConn.close().catch(() => {})
         }
     },
 

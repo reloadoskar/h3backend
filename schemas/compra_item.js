@@ -19,4 +19,9 @@ var CompraItemSchema = Schema({
     timestamps: true
 })
 
+CompraItemSchema.index({createdAt: -1, _id: -1, stock: 1})
+CompraItemSchema.index({compra: 1})
+CompraItemSchema.index({ubicacion: 1, stock: 1})
+CompraItemSchema.index({createdAt: 1})
+
 module.exports = CompraItemSchema
