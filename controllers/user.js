@@ -4,12 +4,12 @@ const conexion_app = require('../src/db')
 const con = require('../src/dbuser')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const { getJwtSecret } = require('../src/jwtSecret')
+const jwtSecret = getJwtSecret()
 const curDate = new Date()
 let curDateISO = curDate.toISOString()
 let tryPeriod = curDate.setDate(curDate.getDate() + 30)
 tryPeriod = new Date(tryPeriod).toISOString()
-process.env.SECRET_KEY = 'muffintop'
-
 const controller = {
     update: async (req, res) => {
         const {user, data} = req.body
@@ -325,7 +325,7 @@ const controller = {
             paidPeriodEnds: empleado.paidPeriodEnds,
         }
 
-        let token = await jwt.sign(payload, process.env.SECRET_KEY, { expiresIn: '12h' })
+        let token = await jwt.sign(payload, jwtSecret, { expiresIn: '12h' })
 
         if(!token){
             errorStatusCode = 401
@@ -360,29 +360,29 @@ const controller = {
         }
     },
 
-    profile: (req, res) => {
+    profile: async (req, res) => {
         const conn = conexion_app()
-        const User = conn.model('User')
-        let decoded = jwt.verify(req.headers['authorization'], process.env.SECRET_KEY)
 
-        User.findOne({
-            _id: decoded._id
-        })
-        .then(user => {
-            conn.close()
-            if(user){
-                res.send({
-                    message: "success",
-                    user
-                })
-            }else{
-                res.send({ message: "El usuario no existe."})
+        try {
+            const User = conn.model('User')
+            const user = await User.findOne({ _id: req.auth._id })
+                .select('nombre apellido1 apellido2 telefono email database level fechaInicio tryPeriodEnds paidPeriodEnds createdAt updatedAt')
+                .lean()
+
+            if (!user) {
+                return res.status(404).send({ message: "El usuario no existe." })
             }
-        })
-        .catch(err => {
-            conn.close()
-            res.send({'error': err})
-        })
+
+            return res.send({
+                message: "success",
+                user
+            })
+        } catch (error) {
+            console.error('No fue posible consultar el perfil autenticado.')
+            return res.status(500).send({ message: 'No fue posible consultar el perfil.' })
+        } finally {
+            await conn.close().catch(() => {})
+        }
     },
 
     restartApp: async (req, res) => {

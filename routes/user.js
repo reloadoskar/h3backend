@@ -6,8 +6,10 @@ const cors = require('cors')
 
 const UserController = require('../controllers/user');
 const EmpresaController = require('../controllers/empresa');
+const { enforceAuthenticatedDatabase } = require('../src/authenticateApi');
 
 router.use(cors())
+router.param('bd', enforceAuthenticatedDatabase)
 
 
 

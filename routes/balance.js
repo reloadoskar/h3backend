@@ -2,8 +2,10 @@
 
 var express = require('express');
 var BalanceController = require('../controllers/balance');
+var { enforceAuthenticatedDatabase } = require('../src/authenticateApi');
 
 var router = express.Router();
+router.param('bd', enforceAuthenticatedDatabase);
 
 //Rutas
 router.get('/:bd/balance/', BalanceController.getBalance);

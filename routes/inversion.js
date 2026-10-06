@@ -2,8 +2,10 @@
 
 var express = require('express');
 var InversionController = require('../controllers/inversion');
+var { enforceAuthenticatedDatabase } = require('../src/authenticateApi');
 
 var router = express.Router();
+router.param('bd', enforceAuthenticatedDatabase);
 
 //Rutas
 router.post('/:bd/inversion/save', InversionController.save);

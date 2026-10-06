@@ -2,8 +2,10 @@
 
 var express = require('express');
 var ProvedorController = require('../controllers/provedor');
+var { enforceAuthenticatedDatabase } = require('../src/authenticateApi');
 
 var router = express.Router();
+router.param('bd', enforceAuthenticatedDatabase);
 
 //Rutas
 router.post('/provedors', ProvedorController.getProvedors);

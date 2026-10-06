@@ -2,8 +2,10 @@
 
 var express = require('express');
 var TipoPagoController = require('../controllers/tipoPago');
+var { enforceAuthenticatedDatabase } = require('../src/authenticateApi');
 
 var router = express.Router();
+router.param('bd', enforceAuthenticatedDatabase);
 
 //Rutas
 router.post('/:bd/tipopago/save', TipoPagoController.save);

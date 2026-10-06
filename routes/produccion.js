@@ -2,7 +2,9 @@
 
 var express = require('express');
 var ProduccionController = require('../controllers/produccion');
+var { enforceAuthenticatedDatabase } = require('../src/authenticateApi');
 var router = express.Router();
+router.param('bd', enforceAuthenticatedDatabase);
 
 //Rutas
 router.get('/:bd/produccion/save', ProduccionController.save);

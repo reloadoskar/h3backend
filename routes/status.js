@@ -2,8 +2,10 @@
 
 var express = require('express');
 var StatusController = require('../controllers/status');
+var { enforceAuthenticatedDatabase } = require('../src/authenticateApi');
 
 var router = express.Router();
+router.param('bd', enforceAuthenticatedDatabase);
 
 //Rutas
 router.post('/:bd/status/save', StatusController.save);

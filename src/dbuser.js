@@ -1,14 +1,26 @@
 const mongoose = require('mongoose');
 const mongoUri = process.env.APP_MONGODB_URI
-module.exports = async function conexionCliente(user) {
-    console.log("DB> Hola: "+user.nombre);
+
+function normalizeTenantUser(user) {
+    const normalized = typeof user === 'string'
+        ? { nombre: 'Usuario autenticado', database: user }
+        : { nombre: user && user.nombre, database: user && user.database }
+    if (!normalized.database || typeof normalized.database !== 'string') {
+        throw new Error('El tenant autenticado no es válido.')
+    }
+    return normalized
+}
+
+async function conexionCliente(user) {
+    const tenantUser = normalizeTenantUser(user)
+    console.log("DB> Hola: "+tenantUser.nombre);
 
     const conn = mongoose.createConnection(mongoUri, {
               useNewUrlParser: true,
               useUnifiedTopology: true,
               connectTimeoutMS: 9000,
               maxPoolSize: 10,
-              dbName: "HDR_USR_"+user.database,
+              dbName: "HDR_USR_"+tenantUser.database,
           })
           conn.model('Balance', require('../schemas/balance'));
           conn.model('Cliente', require('../schemas/cliente'));
@@ -47,7 +59,7 @@ module.exports = async function conexionCliente(user) {
           })
           conn.on('disconnected', function(){
             mongoose.connection.close(() => {
-              console.log("BD> Hasta luego "+ user.nombre +" 🤖🖖");
+              console.log("BD> Hasta luego "+ tenantUser.nombre +" 🤖🖖");
             })
           })
           conn.on('error', function(err){
@@ -56,3 +68,6 @@ module.exports = async function conexionCliente(user) {
           })
     return conn; 
 }
+
+module.exports = conexionCliente
+module.exports.normalizeTenantUser = normalizeTenantUser

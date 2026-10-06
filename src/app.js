@@ -3,6 +3,7 @@ const express = require('express')
 const helmet = require('helmet');
 const bodyParser = require('body-parser')
 const cors = require('cors')
+const { createAuthenticateApi } = require('./authenticateApi')
 
 const app = express()
 
@@ -11,6 +12,7 @@ app.use(bodyParser.urlencoded({limit: '50mb', extended: false}))
 app.use(bodyParser.json({limit: '50mb'}))
 app.use(cors())
 app.use(helmet())
+app.use('/api', createAuthenticateApi())
 
 //cargar rutas
 var producto_routes = require('../routes/producto')

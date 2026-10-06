@@ -2,8 +2,10 @@
 
 var express = require('express');
 var TipoVentaController = require('../controllers/tipoventa');
+var { enforceAuthenticatedDatabase } = require('../src/authenticateApi');
 
 var router = express.Router();
+router.param('bd', enforceAuthenticatedDatabase);
 
 //Rutas
 router.post('/:bd/tipoventa/save', TipoVentaController.save);

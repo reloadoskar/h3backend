@@ -3,7 +3,11 @@
 const assert = require('assert')
 const http = require('http')
 const mongoose = require('mongoose')
+const jwt = require('jsonwebtoken')
+const { getJwtSecret } = require('../src/jwtSecret')
 require('dotenv').config()
+
+let authToken = null
 
 function post(path, body) {
   return new Promise((resolve, reject) => {
@@ -16,7 +20,8 @@ function post(path, body) {
       timeout: 60000,
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload)
+        'Content-Length': Buffer.byteLength(payload),
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
       }
     }, response => {
       let raw = ''
@@ -33,6 +38,33 @@ function post(path, body) {
     request.on('timeout', () => request.destroy(new Error(`Timeout en ${path}`)))
     request.on('error', reject)
     request.end(payload)
+  })
+}
+
+function get(path) {
+  return new Promise((resolve, reject) => {
+    const request = http.request({
+      hostname: '127.0.0.1',
+      port: 8080,
+      path,
+      method: 'GET',
+      timeout: 60000,
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {}
+    }, response => {
+      let raw = ''
+      response.setEncoding('utf8')
+      response.on('data', chunk => { raw += chunk })
+      response.on('end', () => {
+        try {
+          resolve({ status: response.statusCode, data: JSON.parse(raw) })
+        } catch (error) {
+          reject(new Error(`Respuesta inválida de ${path}: ${raw.slice(0, 200)}`))
+        }
+      })
+    })
+    request.on('timeout', () => request.destroy(new Error(`Timeout en ${path}`)))
+    request.on('error', reject)
+    request.end()
   })
 }
 
@@ -58,7 +90,7 @@ async function getTenantFixture() {
     const latestMovement = await Movimiento.findOne({ fecha: /^\d{4}-\d{2}-\d{2}$/ }).select('fecha').sort({ createdAt: -1 }).lean()
     if (!fixture || activeItems > fixture.activeItems) {
       fixture = {
-        user: { nombre: user.nombre || 'QA', database: user.database },
+        user: { _id: user._id, nombre: user.nombre || 'QA', database: user.database, level: 1 },
         activeItems,
         purchaseMonth: latestPurchase ? latestPurchase.fecha.slice(0, 7) : null,
         movementDate: latestMovement ? latestMovement.fecha : null
@@ -73,6 +105,17 @@ async function getTenantFixture() {
 async function run() {
   const fixture = await getTenantFixture()
   assert(fixture && fixture.user, 'No se encontró tenant para la regresión')
+  authToken = jwt.sign(fixture.user, getJwtSecret(), { expiresIn: '5m' })
+
+  const profile = await get('/api/profile')
+  assert.strictEqual(profile.status, 200)
+  assert.strictEqual(profile.data.message, 'success')
+  assert.ok(profile.data.user)
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(profile.data.user, 'password'), false)
+
+  const mismatchedTenant = await post('/api/OTHER_TENANT/status/save', { nombre: 'No permitido' })
+  assert.strictEqual(mismatchedTenant.status, 403)
+  assert.strictEqual(mismatchedTenant.data.message, 'No tiene acceso a esta empresa.')
 
   const missingDate = await post('/api/inventario/movimientos', {
     user: fixture.user,
