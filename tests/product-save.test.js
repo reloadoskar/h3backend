@@ -90,6 +90,44 @@ test('producto save normalizes fields and returns the persisted product', async 
   assert.equal(getCloseCalls(), 1)
 })
 
+test('producto save accepts populated unidad and empaque objects sent by the product form', async () => {
+  let createdData
+  const savedProduct = {
+    _id: '507f1f77bcf86cd799439013',
+    async populate() {}
+  }
+  const { controller, getCloseCalls } = loadController(async data => {
+    createdData = data
+    return savedProduct
+  })
+  const response = createResponse()
+  const request = {
+    body: {
+      ...validRequest.body,
+      data: {
+        ...validRequest.body.data,
+        unidad: {
+          _id: validRequest.body.data.unidad,
+          unidad: 'Cajas',
+          abr: 'Cjs'
+        },
+        empaque: {
+          _id: validRequest.body.data.empaque,
+          empaque: 'Cajas',
+          abr: 'Cjs'
+        }
+      }
+    }
+  }
+
+  await controller.save(request, response)
+
+  assert.equal(response.statusCode, 200)
+  assert.equal(createdData.unidad, validRequest.body.data.unidad)
+  assert.equal(createdData.empaque, validRequest.body.data.empaque)
+  assert.equal(getCloseCalls(), 1)
+})
+
 test('producto save returns 409 for duplicate clave without rejecting or killing the process', async () => {
   const duplicate = Object.assign(new Error('duplicate'), {
     code: 11000,
@@ -181,6 +219,32 @@ test('producto save rejects invalid unidad and empaque before opening a tenant c
     status: 'error',
     message: 'La unidad y el empaque del producto no son válidos.'
   })
+  assert.equal(getCloseCalls(), 0)
+})
+
+test('producto save rejects populated references with non-canonical ObjectIds', async () => {
+  const { controller, getCloseCalls } = loadController(async () => {
+    throw new Error('create must not run')
+  })
+
+  for (const invalidReference of [{ _id: 12 }, { _id: 'abcdefghijkl' }, {}]) {
+    const response = createResponse()
+    const request = {
+      body: {
+        ...validRequest.body,
+        data: {
+          ...validRequest.body.data,
+          unidad: invalidReference
+        }
+      }
+    }
+
+    await controller.save(request, response)
+
+    assert.equal(response.statusCode, 400)
+    assert.equal(response.body.message, 'La unidad y el empaque del producto no son válidos.')
+  }
+
   assert.equal(getCloseCalls(), 0)
 })
 

@@ -2,6 +2,10 @@
 const mongoose = require('mongoose')
 const con = require('../src/dbuser')
 const { parsePagination, pageResult } = require('../src/pagination')
+const {
+    collectMovementReferenceIds,
+    hydrateMovementReferences
+} = require('../src/movementPresentation')
 var controller = {
     getInventario: async (req, res) => {
         const user = req.body
@@ -315,7 +319,30 @@ var controller = {
                 .limit(limit + 1)
                 .lean()
 
-            const page = pageResult(documents, limit, mov => ({
+            const referenceIds = collectMovementReferenceIds(documents)
+            const validIds = ids => ids.filter(id => mongoose.Types.ObjectId.isValid(id))
+            const [ubicaciones, compras, productos] = await Promise.all([
+                conn.model('Ubicacion')
+                    .find({_id: {$in: validIds(referenceIds.ubicacionIds)}})
+                    .select('nombre tipo')
+                    .lean(),
+                conn.model('Compra')
+                    .find({_id: {$in: validIds(referenceIds.compraIds)}})
+                    .select('folio fecha clave')
+                    .lean(),
+                conn.model('Producto')
+                    .find({_id: {$in: validIds(referenceIds.productoIds)}})
+                    .select('nombre descripcion unidad empaque')
+                    .populate({path: 'unidad empaque', select: 'abr'})
+                    .lean()
+            ])
+            const hydratedDocuments = hydrateMovementReferences(documents, {
+                ubicaciones,
+                compras,
+                productos
+            })
+
+            const page = pageResult(hydratedDocuments, limit, mov => ({
                 createdAt: mov.createdAt,
                 id: mov._id
             }))

@@ -2,6 +2,16 @@
 const mongoose = require('mongoose')
 const con = require('../src/dbuser')
 
+function normalizeObjectIdReference(value) {
+    const reference = value && typeof value === 'object' && !(value instanceof mongoose.Types.ObjectId)
+        ? value._id
+        : value
+    if (reference instanceof mongoose.Types.ObjectId) return reference.toHexString()
+    return typeof reference === 'string' && /^[a-f\d]{24}$/i.test(reference)
+        ? reference
+        : null
+}
+
 const controller = {
     save: async (req, res) => {
         let conn
@@ -14,7 +24,9 @@ const controller = {
                     message: 'La clave y la descripción del producto son obligatorias.'
                 })
             }
-            if (!mongoose.isValidObjectId(data.unidad) || !mongoose.isValidObjectId(data.empaque)) {
+            const unidad = normalizeObjectIdReference(data.unidad)
+            const empaque = normalizeObjectIdReference(data.empaque)
+            if (!unidad || !empaque) {
                 return res.status(400).send({
                     status: 'error',
                     message: 'La unidad y el empaque del producto no son válidos.'
@@ -26,7 +38,9 @@ const controller = {
             const producto = {
                 ...data,
                 clave: data.clave.trim().toUpperCase(),
-                descripcion: data.descripcion.trim().toUpperCase()
+                descripcion: data.descripcion.trim().toUpperCase(),
+                unidad,
+                empaque
             }
             const productoGuardado = await Producto.create(producto)
             try {
