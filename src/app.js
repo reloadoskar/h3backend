@@ -1,9 +1,11 @@
 'use strict'
+require('express-async-errors')
 const express = require('express')
 const helmet = require('helmet');
 const bodyParser = require('body-parser')
 const cors = require('cors')
 const { createAuthenticateApi } = require('./authenticateApi')
+const { createApiErrorHandler } = require('./apiErrorHandler')
 
 const app = express()
 
@@ -74,5 +76,7 @@ app.use('/api', liquidacion_routes)
 app.get('/', (req, res) => {
     res.send('HOLA SOY HADRIA 3 SERVER 🤖.');
 });
+
+app.use(createApiErrorHandler())
 
 module.exports = app;

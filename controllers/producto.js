@@ -1,33 +1,71 @@
 'use strict'
+const mongoose = require('mongoose')
 const con = require('../src/dbuser')
 
 const controller = {
     save: async (req, res) => {
-        const {user, data} = req.body
-        const conn = await con(user)
-        const Producto = conn.model('Producto')
-
-        let producto = data
-            producto.clave = data.clave.toUpperCase();
-            producto.descripcion = data.descripcion.toUpperCase();
-        
-            //Guardar objeto
-            let productoGuardado = await Producto.create(producto)
-            if(!productoGuardado){
-                return res.status(500).send({
+        let conn
+        try {
+            const { user, data } = req.body || {}
+            if (!data || typeof data.clave !== 'string' || typeof data.descripcion !== 'string' ||
+                !data.clave.trim() || !data.descripcion.trim()) {
+                return res.status(400).send({
                     status: 'error',
-                    message: 'El producto no se guardó'
+                    message: 'La clave y la descripción del producto son obligatorias.'
+                })
+            }
+            if (!mongoose.isValidObjectId(data.unidad) || !mongoose.isValidObjectId(data.empaque)) {
+                return res.status(400).send({
+                    status: 'error',
+                    message: 'La unidad y el empaque del producto no son válidos.'
                 })
             }
 
-            await productoGuardado.populate("unidad empaque")
+            conn = await con(user)
+            const Producto = conn.model('Producto')
+            const producto = {
+                ...data,
+                clave: data.clave.trim().toUpperCase(),
+                descripcion: data.descripcion.trim().toUpperCase()
+            }
+            const productoGuardado = await Producto.create(producto)
+            try {
+                await productoGuardado.populate('unidad empaque')
+            } catch (error) {
+                console.error('El producto se guardó, pero no fue posible cargar sus relaciones.')
+            }
 
-            conn.close()
             return res.status(200).send({
                 status: 'success',
                 message: 'Producto guardado correctamente.',
                 producto: productoGuardado
             })
+        } catch (error) {
+            if (error && error.code === 11000) {
+                const duplicateField = error.keyPattern && Object.keys(error.keyPattern)[0]
+                const duplicateMessages = {
+                    clave: 'Ya existe un producto con esa clave.',
+                    descripcion: 'Ya existe un producto con esa descripción.'
+                }
+                return res.status(409).send({
+                    status: 'error',
+                    message: duplicateMessages[duplicateField] || 'Ya existe un producto con esos datos.'
+                })
+            }
+
+            return res.status(500).send({
+                status: 'error',
+                message: 'No fue posible guardar el producto.'
+            })
+        } finally {
+            if (conn) {
+                try {
+                    await conn.close()
+                } catch (error) {
+                    console.error('No fue posible cerrar la conexión del producto.')
+                }
+            }
+        }
     },
 
     getProductos: async (req, res) => {

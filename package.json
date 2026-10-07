@@ -9,7 +9,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch-path=src --watch-path=controllers --watch-path=routes --watch-path=schemas src/server.js"
+    "dev": "node --watch-path=src --watch-path=controllers --watch-path=routes --watch-path=schemas src/server.js",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/login-errors.e2e.js && node tests/large-lists.e2e.js",
+    "migrate:product-index": "node scripts/migrations/remove-obsolete-product-name-index.js"
   },
   "author": "",
   "license": "ISC",
@@ -19,6 +22,7 @@
     "cors": "2.8.6",
     "dotenv": "16.6.1",
     "express": "4.22.3",
+    "express-async-errors": "3.1.1",
     "helmet": "6.2.0",
     "jsonwebtoken": "9.0.3",
     "mongoose": "6.13.11"
